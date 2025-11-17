@@ -1,3 +1,7 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Navigation from "./_components/landing/Navigation"
 import Hero from "./_components/landing/Hero"
 import Stats from "./_components/landing/Stats"
@@ -23,6 +27,46 @@ import CTA from "./_components/landing/CTA"
 import Footer from "./_components/landing/Footer"
 
 export default function Home() {
+  const router = useRouter();
+  const [isChecking, setIsChecking] = useState(true);
+  const [showLanding, setShowLanding] = useState(false);
+
+  useEffect(() => {
+    async function checkSetup() {
+      try {
+        const response = await fetch('/api/db-status');
+        const status = await response.json();
+
+        if (!status.isSetup) {
+          // Database is not set up, redirect to onboarding
+          router.push('/onboarding');
+        } else {
+          // Database is set up, show landing page
+          setShowLanding(true);
+          setIsChecking(false);
+        }
+      } catch (error) {
+        console.error('Error checking database status:', error);
+        // On error, redirect to onboarding to be safe
+        router.push('/onboarding');
+      }
+    }
+
+    checkSetup();
+  }, [router]);
+
+  // Show loading state while checking
+  if (isChecking || !showLanding) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <main className="min-h-screen">
       <Navigation />
