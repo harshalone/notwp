@@ -43,6 +43,29 @@ CREATE TRIGGER update_nwp_accounts_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION public.update_updated_at_column();
 
+-- ============================================================================
+-- HELPER FUNCTION TO CHECK ADMIN STATUS (avoids infinite recursion in RLS)
+-- ============================================================================
+-- This function bypasses RLS to check admin status, breaking circular dependencies
+
+CREATE OR REPLACE FUNCTION public.is_admin(user_id UUID)
+RETURNS BOOLEAN
+SECURITY DEFINER  -- This allows the function to bypass RLS
+SET search_path = public
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM public.nwp_accounts
+        WHERE user_uid = user_id AND role = 'administrator'
+    );
+END;
+$$;
+
+-- Grant execute permission to authenticated and anonymous users
+GRANT EXECUTE ON FUNCTION public.is_admin(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_admin(UUID) TO anon;
+
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.nwp_accounts ENABLE ROW LEVEL SECURITY;
 
@@ -57,34 +80,25 @@ CREATE POLICY "Users can update own account" ON public.nwp_accounts
     FOR UPDATE
     USING (auth.uid() = user_uid);
 
--- Policy: Administrators can view all accounts
+-- Policy: Administrators can view all accounts (using helper function to avoid recursion)
 CREATE POLICY "Administrators can view all accounts" ON public.nwp_accounts
     FOR SELECT
     USING (
-        EXISTS (
-            SELECT 1 FROM public.nwp_accounts
-            WHERE user_uid = auth.uid() AND role = 'administrator'
-        )
+        auth.uid() = user_uid OR public.is_admin(auth.uid())
     );
 
--- Policy: Administrators can update all accounts
+-- Policy: Administrators can update all accounts (using helper function to avoid recursion)
 CREATE POLICY "Administrators can update all accounts" ON public.nwp_accounts
     FOR UPDATE
     USING (
-        EXISTS (
-            SELECT 1 FROM public.nwp_accounts
-            WHERE user_uid = auth.uid() AND role = 'administrator'
-        )
+        auth.uid() = user_uid OR public.is_admin(auth.uid())
     );
 
--- Policy: Administrators can delete accounts
+-- Policy: Administrators can delete accounts (using helper function to avoid recursion)
 CREATE POLICY "Administrators can delete accounts" ON public.nwp_accounts
     FOR DELETE
     USING (
-        EXISTS (
-            SELECT 1 FROM public.nwp_accounts
-            WHERE user_uid = auth.uid() AND role = 'administrator'
-        )
+        public.is_admin(auth.uid())
     );
 
 -- Grant permissions

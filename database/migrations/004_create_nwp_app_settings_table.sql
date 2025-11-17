@@ -28,39 +28,30 @@ CREATE TRIGGER update_nwp_app_settings_updated_at
 ALTER TABLE public.nwp_app_settings ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
--- Policy: Public settings can be viewed by anyone
+-- Policy: Public settings can be viewed by anyone (authenticated or anonymous)
 CREATE POLICY "Public settings can be viewed by anyone" ON public.nwp_app_settings
     FOR SELECT
     USING (is_public = TRUE);
 
--- Policy: Administrators can view all settings
+-- Policy: Administrators can view all settings (using helper function to avoid recursion)
 CREATE POLICY "Administrators can view all settings" ON public.nwp_app_settings
     FOR SELECT
     USING (
-        EXISTS (
-            SELECT 1 FROM public.nwp_accounts
-            WHERE user_uid = auth.uid() AND role = 'administrator'
-        )
+        is_public = TRUE OR public.is_admin(auth.uid())
     );
 
--- Policy: Administrators can insert settings
+-- Policy: Administrators can insert settings (using helper function to avoid recursion)
 CREATE POLICY "Administrators can insert settings" ON public.nwp_app_settings
     FOR INSERT
     WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM public.nwp_accounts
-            WHERE user_uid = auth.uid() AND role = 'administrator'
-        )
+        public.is_admin(auth.uid())
     );
 
--- Policy: Administrators can update settings
+-- Policy: Administrators can update settings (using helper function to avoid recursion)
 CREATE POLICY "Administrators can update settings" ON public.nwp_app_settings
     FOR UPDATE
     USING (
-        EXISTS (
-            SELECT 1 FROM public.nwp_accounts
-            WHERE user_uid = auth.uid() AND role = 'administrator'
-        )
+        public.is_admin(auth.uid())
     );
 
 -- Policy: Allow service_role to update settings during installation
@@ -69,14 +60,11 @@ CREATE POLICY "Service role can update settings" ON public.nwp_app_settings
     FOR UPDATE
     USING (true);
 
--- Policy: Administrators can delete settings
+-- Policy: Administrators can delete settings (using helper function to avoid recursion)
 CREATE POLICY "Administrators can delete settings" ON public.nwp_app_settings
     FOR DELETE
     USING (
-        EXISTS (
-            SELECT 1 FROM public.nwp_accounts
-            WHERE user_uid = auth.uid() AND role = 'administrator'
-        )
+        public.is_admin(auth.uid())
     );
 
 -- Insert default settings

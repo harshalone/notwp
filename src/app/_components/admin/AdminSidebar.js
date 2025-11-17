@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
 import {
   LayoutDashboard,
   FileText,
@@ -13,12 +14,14 @@ import {
   Package,
   BarChart3,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  User
 } from 'lucide-react';
 
 export default function AdminSidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname();
+  const { account } = useAuth();
 
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/dadmin' },
@@ -33,7 +36,7 @@ export default function AdminSidebar() {
 
   return (
     <aside
-      className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white border-r border-stone-200 h-screen fixed left-0 top-0 z-50 transition-all duration-300`}
+      className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white border-r border-stone-200 h-screen fixed left-0 top-0 z-50 transition-all duration-300 flex flex-col`}
     >
       {/* Logo and Collapse Button */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-stone-200">
@@ -53,7 +56,7 @@ export default function AdminSidebar() {
       </div>
 
       {/* Menu Items */}
-      <nav className="py-2">
+      <nav className="py-2 flex-1">
         {menuItems.map((item, index) => {
           const isActive = pathname === item.href;
           return (
@@ -75,6 +78,29 @@ export default function AdminSidebar() {
           );
         })}
       </nav>
+
+      {/* Admin Info at Bottom */}
+      <div className="border-t border-stone-200 p-4">
+        {isCollapsed ? (
+          <div className="flex justify-center">
+            <div className="w-8 h-8 rounded-full bg-stone-900 flex items-center justify-center">
+              <User className="w-4 h-4 text-white" />
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-stone-900 flex items-center justify-center flex-shrink-0">
+              <User className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-stone-900 truncate">
+                {account?.displayName || account?.username || 'Admin'}
+              </p>
+              <p className="text-xs text-stone-500 truncate">{account?.email || ''}</p>
+            </div>
+          </div>
+        )}
+      </div>
     </aside>
   );
 }

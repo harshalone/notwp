@@ -29,6 +29,7 @@ import {
   handleCommandNavigation,
   handleImageDrop,
   handleImagePaste,
+  useEditor,
 } from 'novel';
 import {
   Type,
@@ -43,8 +44,16 @@ import {
   ImageIcon,
   Youtube as YoutubeIcon,
   Twitter as TwitterIcon,
+  Bold,
+  Italic,
+  Underline,
+  Strikethrough,
+  Code as CodeIcon,
 } from 'lucide-react';
 import { ImageModal, YoutubeModal, TwitterModal } from './MediaModal';
+import { NodeSelector } from './selectors/node-selector';
+import { LinkSelector } from './selectors/link-selector';
+import { ColorSelector, ColorExtensions } from './selectors/color-selector';
 
 const defaultContent = {
   type: 'doc',
@@ -631,6 +640,75 @@ const createSuggestionItemsWithModals = (modalHandlers) => createSuggestionItems
   },
 ]);
 
+const BubbleContent = ({ openNode, setOpenNode, openLink, setOpenLink, openColor, setOpenColor }) => {
+  const { editor } = useEditor();
+
+  if (!editor) return null;
+
+  return (
+    <>
+      <NodeSelector
+        editor={editor}
+        open={openNode}
+        onOpenChange={setOpenNode}
+      />
+
+      <div className="h-6 w-px bg-stone-200" />
+
+      <LinkSelector
+        editor={editor}
+        open={openLink}
+        onOpenChange={setOpenLink}
+      />
+
+      <div className="h-6 w-px bg-stone-200" />
+
+      <EditorBubbleItem
+        onSelect={(editor) => editor.chain().focus().toggleBold().run()}
+        className="px-3 py-2 text-sm hover:bg-stone-100 transition-colors"
+      >
+        <Bold className={`h-4 w-4 ${editor.isActive('bold') ? 'text-blue-500' : 'text-stone-700'}`} />
+      </EditorBubbleItem>
+
+      <EditorBubbleItem
+        onSelect={(editor) => editor.chain().focus().toggleItalic().run()}
+        className="px-3 py-2 text-sm hover:bg-stone-100 transition-colors"
+      >
+        <Italic className={`h-4 w-4 ${editor.isActive('italic') ? 'text-blue-500' : 'text-stone-700'}`} />
+      </EditorBubbleItem>
+
+      <EditorBubbleItem
+        onSelect={(editor) => editor.chain().focus().toggleUnderline().run()}
+        className="px-3 py-2 text-sm hover:bg-stone-100 transition-colors"
+      >
+        <Underline className={`h-4 w-4 ${editor.isActive('underline') ? 'text-blue-500' : 'text-stone-700'}`} />
+      </EditorBubbleItem>
+
+      <EditorBubbleItem
+        onSelect={(editor) => editor.chain().focus().toggleStrike().run()}
+        className="px-3 py-2 text-sm hover:bg-stone-100 transition-colors"
+      >
+        <Strikethrough className={`h-4 w-4 ${editor.isActive('strike') ? 'text-blue-500' : 'text-stone-700'}`} />
+      </EditorBubbleItem>
+
+      <EditorBubbleItem
+        onSelect={(editor) => editor.chain().focus().toggleCode().run()}
+        className="px-3 py-2 text-sm hover:bg-stone-100 transition-colors"
+      >
+        <CodeIcon className={`h-4 w-4 ${editor.isActive('code') ? 'text-blue-500' : 'text-stone-700'}`} />
+      </EditorBubbleItem>
+
+      <div className="h-6 w-px bg-stone-200" />
+
+      <ColorSelector
+        editor={editor}
+        open={openColor}
+        onOpenChange={setOpenColor}
+      />
+    </>
+  );
+};
+
 export default function Editor() {
   const [initialContent, setInitialContent] = useState(null);
   const [saveStatus, setSaveStatus] = useState('Saved');
@@ -638,6 +716,9 @@ export default function Editor() {
   const [youtubeModalOpen, setYoutubeModalOpen] = useState(false);
   const [twitterModalOpen, setTwitterModalOpen] = useState(false);
   const [currentEditor, setCurrentEditor] = useState(null);
+  const [openNode, setOpenNode] = useState(false);
+  const [openColor, setOpenColor] = useState(false);
+  const [openLink, setOpenLink] = useState(false);
 
   useEffect(() => {
     setInitialContent(defaultContent);
@@ -773,6 +854,7 @@ export default function Editor() {
         class: 'rounded-lg overflow-hidden',
       },
     }),
+    ...ColorExtensions,
   ];
 
   if (!initialContent) return null;
@@ -850,38 +932,16 @@ export default function Editor() {
             tippyOptions={{
               placement: 'top',
             }}
-            className="flex w-fit max-w-[90vw] overflow-hidden rounded-lg border border-stone-200 bg-white shadow-xl"
+            className="flex w-fit max-w-[90vw] overflow-visible rounded-lg border border-stone-200 bg-white shadow-xl"
           >
-            <EditorBubbleItem
-              onSelect={(editor) => editor.chain().focus().toggleBold().run()}
-              className="px-3 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-100 transition-colors border-r border-stone-200"
-            >
-              B
-            </EditorBubbleItem>
-            <EditorBubbleItem
-              onSelect={(editor) => editor.chain().focus().toggleItalic().run()}
-              className="px-3 py-2 text-sm italic text-stone-700 hover:bg-stone-100 transition-colors border-r border-stone-200"
-            >
-              I
-            </EditorBubbleItem>
-            <EditorBubbleItem
-              onSelect={(editor) => editor.chain().focus().toggleUnderline().run()}
-              className="px-3 py-2 text-sm underline text-stone-700 hover:bg-stone-100 transition-colors border-r border-stone-200"
-            >
-              U
-            </EditorBubbleItem>
-            <EditorBubbleItem
-              onSelect={(editor) => editor.chain().focus().toggleStrike().run()}
-              className="px-3 py-2 text-sm line-through text-stone-700 hover:bg-stone-100 transition-colors border-r border-stone-200"
-            >
-              S
-            </EditorBubbleItem>
-            <EditorBubbleItem
-              onSelect={(editor) => editor.chain().focus().toggleCode().run()}
-              className="px-3 py-2 text-sm font-mono text-stone-700 hover:bg-stone-100 transition-colors"
-            >
-              {'</>'}
-            </EditorBubbleItem>
+            <BubbleContent
+              openNode={openNode}
+              setOpenNode={setOpenNode}
+              openLink={openLink}
+              setOpenLink={setOpenLink}
+              openColor={openColor}
+              setOpenColor={setOpenColor}
+            />
           </EditorBubble>
         </EditorContent>
       </EditorRoot>

@@ -1,137 +1,89 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Upload, Link as LinkIcon } from 'lucide-react';
+import { X } from 'lucide-react';
 
 export default function VideoPopup({ isOpen, onClose }) {
-  const [uploadMethod, setUploadMethod] = useState('upload'); // 'upload' or 'url'
   const [videoUrl, setVideoUrl] = useState('');
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
-  const handleFileSelect = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedFile(file);
+  const handleInsert = () => {
+    const ytregex = new RegExp(
+      /^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$/
+    );
+
+    if (videoUrl && ytregex.test(videoUrl)) {
+      // Handle video insertion logic here
+      console.log('Insert YouTube video:', videoUrl);
+      setVideoUrl('');
+      setError('');
+      onClose();
+    } else if (videoUrl) {
+      setError('Please enter a valid YouTube URL');
     }
   };
 
-  const handleInsert = () => {
-    // Handle video insertion logic here
-    console.log('Insert video:', uploadMethod === 'upload' ? selectedFile : videoUrl);
-    onClose();
-  };
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 cursor-pointer" onClick={onClose}>
+      <div className="relative w-[1200px] h-[800px] bg-white rounded-xl shadow-2xl overflow-hidden cursor-default" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-stone-200">
-          <h2 className="text-lg font-semibold text-stone-900">Add Video</h2>
+        <div className="flex items-center justify-between px-8 py-6 border-b border-stone-200">
+          <h2 className="text-2xl font-semibold text-stone-900">Embed YouTube Video</h2>
           <button
             onClick={onClose}
-            className="p-1 rounded-md hover:bg-stone-100 text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"
+            className="p-2 rounded-lg hover:bg-stone-100 transition-colors cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-6 h-6 text-stone-500" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6">
-          {/* Toggle between Upload and URL */}
-          <div className="flex gap-2 mb-4">
-            <button
-              onClick={() => setUploadMethod('upload')}
-              className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
-                uploadMethod === 'upload'
-                  ? 'bg-stone-900 text-white'
-                  : 'bg-white text-stone-900 border border-stone-300 hover:bg-stone-50'
-              }`}
-            >
-              <Upload className="w-4 h-4 inline-block mr-2" />
-              Upload
-            </button>
-            <button
-              onClick={() => setUploadMethod('url')}
-              className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
-                uploadMethod === 'url'
-                  ? 'bg-stone-900 text-white'
-                  : 'bg-white text-stone-900 border border-stone-300 hover:bg-stone-50'
-              }`}
-            >
-              <LinkIcon className="w-4 h-4 inline-block mr-2" />
-              URL
-            </button>
-          </div>
-
-          {/* Upload Section */}
-          {uploadMethod === 'upload' && (
-            <div className="border-2 border-dashed border-stone-300 rounded-lg p-8 text-center hover:border-stone-400 transition-colors">
-              <input
-                type="file"
-                accept="video/*"
-                onChange={handleFileSelect}
-                className="hidden"
-                id="video-upload"
-              />
-              <label
-                htmlFor="video-upload"
-                className="cursor-pointer flex flex-col items-center gap-3"
-              >
-                <Upload className="w-12 h-12 text-stone-400" />
-                <div>
-                  <p className="text-sm font-medium text-stone-900">
-                    Click to upload
-                  </p>
-                  <p className="text-xs text-stone-500 mt-1">
-                    MP4, WebM, OGG up to 100MB
-                  </p>
-                </div>
-              </label>
-              {selectedFile && (
-                <p className="mt-4 text-sm text-stone-600 truncate">
-                  {selectedFile.name}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* URL Section */}
-          {uploadMethod === 'url' && (
-            <div>
-              <label className="block text-sm font-medium text-stone-900 mb-2">
-                Video URL
-              </label>
-              <input
-                type="text"
-                value={videoUrl}
-                onChange={(e) => setVideoUrl(e.target.value)}
-                placeholder="https://youtube.com/watch?v=..."
-                className="w-full px-3 py-2 border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-stone-900 focus:border-transparent text-sm"
-              />
-              <p className="mt-2 text-xs text-stone-500">
-                Supports YouTube, Vimeo, and direct video URLs
+        <div className="p-12 flex flex-col items-center justify-center h-[calc(800px-96px)]">
+          <div className="w-full max-w-2xl">
+            <div className="mb-12 text-center">
+              <div className="inline-flex items-center justify-center w-32 h-32 bg-red-100 rounded-full mb-8">
+                <svg className="w-16 h-16 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                </svg>
+              </div>
+              <p className="text-lg text-stone-600 mb-8">
+                Enter a YouTube video URL to embed it in your document
               </p>
             </div>
-          )}
-        </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-4 border-t border-stone-200">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-stone-700 hover:text-stone-900 transition-colors cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleInsert}
-            disabled={uploadMethod === 'upload' ? !selectedFile : !videoUrl}
-            className="px-4 py-2 bg-stone-900 text-white text-sm font-medium rounded-md hover:bg-stone-800 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Insert Video
-          </button>
+            <div className="space-y-6">
+              <div>
+                <input
+                  type="text"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  value={videoUrl}
+                  onChange={(e) => {
+                    setVideoUrl(e.target.value);
+                    setError('');
+                  }}
+                  className={`w-full px-5 py-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base ${
+                    error ? 'border-red-500' : 'border-stone-300'
+                  }`}
+                  onKeyDown={(e) => e.key === 'Enter' && handleInsert()}
+                  autoFocus
+                />
+                {error && <p className="mt-3 text-base text-red-600">{error}</p>}
+              </div>
+
+              <button
+                onClick={handleInsert}
+                className="w-full px-5 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-base font-medium cursor-pointer"
+              >
+                Embed Video
+              </button>
+
+              <div className="text-base text-stone-500 text-center">
+                Supports youtube.com and youtu.be links
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

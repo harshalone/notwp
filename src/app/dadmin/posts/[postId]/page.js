@@ -1,16 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Editor from "@/app/_components/editor";
-import Sidebar from "@/app/_components/Sidebar";
-import Header from "@/app/_components/Header";
+import AdminSidebar from "@/app/_components/admin/AdminSidebar";
+import AdminHeader from "@/app/_components/admin/AdminHeader";
 import RightSidebar from "@/app/_components/RightSidebar";
 import ImagePopup from "@/app/_components/ImagePopup";
 import VideoPopup from "@/app/_components/VideoPopup";
-import { getSupabaseClient } from '@/lib/supabase-client';
-import { ArrowLeft, Loader2 } from 'lucide-react';
-import Link from 'next/link';
+import { createClient } from '@/lib/supabase-browser';
+import { Loader2 } from 'lucide-react';
 
 export default function PostEditorPage() {
   const params = useParams();
@@ -23,16 +22,20 @@ export default function PostEditorPage() {
   const [error, setError] = useState(null);
   const [post, setPost] = useState(null);
 
+  // Refs to hold the save and publish handlers from RightSidebar
+  const saveHandlerRef = useRef(null);
+  const publishHandlerRef = useRef(null);
+
   useEffect(() => {
     async function fetchPost() {
       try {
-        const supabase = getSupabaseClient();
+        const supabase = createClient();
 
-        // Fetch the post by ID
+        // Fetch the post by post_uid
         const { data, error: fetchError } = await supabase
           .from('nwp_posts')
           .select('*')
-          .eq('id', postId)
+          .eq('post_uid', postId)
           .single();
 
         if (fetchError) {
@@ -79,13 +82,6 @@ export default function PostEditorPage() {
             <p className="text-red-800 font-semibold mb-2">Error</p>
             <p className="text-red-600 text-sm">{error}</p>
           </div>
-          <Link
-            href="/dadmin/posts"
-            className="inline-flex items-center gap-2 text-stone-600 hover:text-stone-900 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Posts
-          </Link>
         </div>
       </div>
     );
@@ -93,40 +89,29 @@ export default function PostEditorPage() {
 
   return (
     <div className="flex min-h-screen bg-stone-50">
-      {/* Left Sidebar */}
-      <Sidebar />
+      {/* Admin Sidebar */}
+      <AdminSidebar />
 
       {/* Main Content Area */}
-      <div className="flex-1 ml-64 mr-80">
-        {/* Header */}
-        <Header
-          onImageClick={() => setIsImagePopupOpen(true)}
-          onVideoClick={() => setIsVideoPopupOpen(true)}
-        />
+      <div className="flex-1 ml-64 mr-96">
+        {/* Admin Header */}
+        <AdminHeader />
 
         {/* Editor */}
         <main className="pt-20 px-8 pb-8">
-          {/* Post Title Display */}
-          <div className="mb-6">
-            <Link
-              href="/dadmin/posts"
-              className="inline-flex items-center gap-2 text-sm text-stone-600 hover:text-stone-900 mb-4 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Posts
-            </Link>
-            <h1 className="text-2xl font-bold text-stone-900">{post?.title}</h1>
-            <p className="text-sm text-stone-500 mt-1">
-              Status: <span className="capitalize">{post?.post_status}</span>
-            </p>
-          </div>
-
           <Editor postId={postId} initialContent={post?.content} />
         </main>
       </div>
 
       {/* Right Sidebar */}
-      <RightSidebar />
+      <RightSidebar
+        postId={postId}
+        post={post}
+        onSaveReady={(handler) => saveHandlerRef.current = handler}
+        onPublishReady={(handler) => publishHandlerRef.current = handler}
+        onImageClick={() => setIsImagePopupOpen(true)}
+        onVideoClick={() => setIsVideoPopupOpen(true)}
+      />
 
       {/* Popups */}
       <ImagePopup

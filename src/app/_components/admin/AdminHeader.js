@@ -1,9 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Search, Bell, User, LogOut, Settings, HelpCircle } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
 
 export default function AdminHeader() {
+  const { account, signOut } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -76,24 +79,37 @@ export default function AdminHeader() {
               <User className="w-5 h-5 text-white" />
             </div>
             <div className="text-left">
-              <p className="text-sm font-medium text-stone-900">Admin User</p>
-              <p className="text-xs text-stone-500">admin@notwp.com</p>
+              <p className="text-sm font-medium text-stone-900">
+                {account?.displayName || account?.username || 'User'}
+              </p>
+              <p className="text-xs text-stone-500">{account?.email || ''}</p>
             </div>
           </button>
 
           {/* User Dropdown */}
           {showUserMenu && (
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-stone-200 py-2">
-              <button className="w-full px-4 py-2 text-left text-sm text-stone-700 hover:bg-stone-50 flex items-center gap-2 cursor-pointer">
+              <Link
+                href="/dadmin/profile"
+                className="w-full px-4 py-2 text-left text-sm text-stone-700 hover:bg-stone-50 flex items-center gap-2 cursor-pointer"
+                onClick={() => setShowUserMenu(false)}
+              >
                 <User className="w-4 h-4" />
                 Profile
-              </button>
-              <button className="w-full px-4 py-2 text-left text-sm text-stone-700 hover:bg-stone-50 flex items-center gap-2 cursor-pointer">
+              </Link>
+              <Link
+                href="/dadmin/settings"
+                className="w-full px-4 py-2 text-left text-sm text-stone-700 hover:bg-stone-50 flex items-center gap-2 cursor-pointer"
+                onClick={() => setShowUserMenu(false)}
+              >
                 <Settings className="w-4 h-4" />
                 Settings
-              </button>
+              </Link>
               <hr className="my-2 border-stone-200" />
-              <button className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer">
+              <button
+                onClick={signOut}
+                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer"
+              >
                 <LogOut className="w-4 h-4" />
                 Logout
               </button>

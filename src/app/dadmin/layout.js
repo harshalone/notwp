@@ -1,8 +1,7 @@
-export const metadata = {
-  title: 'Admin Panel - notwp',
-  description: 'Manage your notwp content',
-};
+'use client';
+
+import { AuthProvider } from '@/lib/auth-context';
 
 export default function DadminLayout({ children }) {
-  return children;
+  return <AuthProvider>{children}</AuthProvider>;
 }

@@ -40,7 +40,7 @@ export default function AddPostPage() {
       }
 
       // Redirect to the post editor page
-      router.push(`/dadmin/posts/${data.post.id}`);
+      router.push(`/dadmin/posts/${data.post.post_uid}`);
     } catch (err) {
       console.error('Error creating post:', err);
       setError(err.message || 'Failed to create post. Please try again.');
