@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import Editor from "@/components/editor";
-import Sidebar from "@/components/Sidebar";
-import Header from "@/components/Header";
-import RightSidebar from "@/components/RightSidebar";
-import ImagePopup from "@/components/ImagePopup";
-import VideoPopup from "@/components/VideoPopup";
+import Editor from "@/app/_components/editor";
+import Sidebar from "@/app/_components/Sidebar";
+import Header from "@/app/_components/Header";
+import RightSidebar from "@/app/_components/RightSidebar";
+import ImagePopup from "@/app/_components/ImagePopup";
+import VideoPopup from "@/app/_components/VideoPopup";
 
 export default function EditorPage() {
   const [isImagePopupOpen, setIsImagePopupOpen] = useState(false);

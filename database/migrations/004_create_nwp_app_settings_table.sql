@@ -83,7 +83,7 @@ CREATE POLICY "Administrators can delete settings" ON public.nwp_app_settings
 INSERT INTO public.nwp_app_settings (setting_key, setting_value, setting_type, description, is_public) VALUES
     ('app_name', 'NotWordPress', 'string', 'Application name', TRUE),
     ('app_version', '1.0.0', 'string', 'Application version', TRUE),
-    ('installation_complete', 'false', 'boolean', 'Whether the initial installation is complete', FALSE),
+    ('installation_complete', 'false', 'boolean', 'Whether the initial installation is complete', TRUE),
     ('supabase_url', NULL, 'encrypted', 'Supabase project URL', FALSE),
     ('supabase_anon_key', NULL, 'encrypted', 'Supabase anonymous key', FALSE),
     ('supabase_service_role_key', NULL, 'encrypted', 'Supabase service role key', FALSE)

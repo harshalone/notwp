@@ -1,0 +1,106 @@
+'use client';
+
+import { useState } from 'react';
+import { Search, Bell, User, LogOut, Settings, HelpCircle } from 'lucide-react';
+
+export default function AdminHeader() {
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  return (
+    <header className="h-16 bg-white border-b border-stone-200 flex items-center justify-between px-6 fixed top-0 right-0 left-64 z-40">
+      {/* Search Bar */}
+      <div className="flex-1 max-w-md">
+        <div className="relative">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-stone-400" />
+          <input
+            type="text"
+            placeholder="Search..."
+            className="w-full pl-10 pr-4 py-2 border border-stone-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-stone-900 focus:border-transparent"
+          />
+        </div>
+      </div>
+
+      {/* Right Side Actions */}
+      <div className="flex items-center gap-3">
+        {/* Help Button */}
+        <button
+          className="p-2 rounded-md hover:bg-stone-100 text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"
+          title="Help"
+        >
+          <HelpCircle className="w-5 h-5" />
+        </button>
+
+        {/* Notifications */}
+        <div className="relative">
+          <button
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="p-2 rounded-md hover:bg-stone-100 text-stone-600 hover:text-stone-900 transition-colors cursor-pointer relative"
+            title="Notifications"
+          >
+            <Bell className="w-5 h-5" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+          </button>
+
+          {/* Notifications Dropdown */}
+          {showNotifications && (
+            <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-stone-200 py-2">
+              <div className="px-4 py-2 border-b border-stone-200">
+                <h3 className="text-sm font-semibold text-stone-900">Notifications</h3>
+              </div>
+              <div className="max-h-96 overflow-y-auto">
+                <div className="px-4 py-3 hover:bg-stone-50 cursor-pointer">
+                  <p className="text-sm text-stone-900">New comment on your post</p>
+                  <p className="text-xs text-stone-500 mt-1">2 minutes ago</p>
+                </div>
+                <div className="px-4 py-3 hover:bg-stone-50 cursor-pointer">
+                  <p className="text-sm text-stone-900">New user registered</p>
+                  <p className="text-xs text-stone-500 mt-1">1 hour ago</p>
+                </div>
+                <div className="px-4 py-3 hover:bg-stone-50 cursor-pointer">
+                  <p className="text-sm text-stone-900">Server update completed</p>
+                  <p className="text-xs text-stone-500 mt-1">3 hours ago</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* User Menu */}
+        <div className="relative">
+          <button
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            className="flex items-center gap-2 p-2 rounded-md hover:bg-stone-100 transition-colors cursor-pointer"
+          >
+            <div className="w-8 h-8 rounded-full bg-stone-900 flex items-center justify-center">
+              <User className="w-5 h-5 text-white" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-medium text-stone-900">Admin User</p>
+              <p className="text-xs text-stone-500">admin@notwp.com</p>
+            </div>
+          </button>
+
+          {/* User Dropdown */}
+          {showUserMenu && (
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-stone-200 py-2">
+              <button className="w-full px-4 py-2 text-left text-sm text-stone-700 hover:bg-stone-50 flex items-center gap-2 cursor-pointer">
+                <User className="w-4 h-4" />
+                Profile
+              </button>
+              <button className="w-full px-4 py-2 text-left text-sm text-stone-700 hover:bg-stone-50 flex items-center gap-2 cursor-pointer">
+                <Settings className="w-4 h-4" />
+                Settings
+              </button>
+              <hr className="my-2 border-stone-200" />
+              <button className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer">
+                <LogOut className="w-4 h-4" />
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}

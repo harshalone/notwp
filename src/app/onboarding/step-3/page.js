@@ -17,7 +17,7 @@ const initialMigrations = [
   { id: '002', name: 'Auth Sync Trigger', status: 'pending' },
   { id: '003', name: 'Posts Table', status: 'pending' },
   { id: '004', name: 'App Settings Table', status: 'pending' },
-  { id: 'cleanup', name: 'Security Cleanup (Remove exec_sql)', status: 'pending' },
+  { id: 'cleanup', name: 'Installation Verification', status: 'pending' },
 ];
 
 export default function Step3Page() {
@@ -97,8 +97,22 @@ export default function Step3Page() {
       }
 
       // All migrations successful
+      // Save config to file
+      const saveConfigResponse = await fetch('/api/onboarding/save-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: credentials,
+      });
+
+      if (!saveConfigResponse.ok) {
+        console.error('Failed to save config file');
+      }
+
       setIsComplete(true);
       setIsInstalling(false);
+
+      // Don't clear session storage yet - Step 4 needs the credentials
+      // Step 4 will clear them after the installation is marked complete
 
       // Auto-redirect to step 4 after 1 second
       setTimeout(() => {

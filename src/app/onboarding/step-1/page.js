@@ -111,28 +111,18 @@ export default function Step1Page() {
           </p>
         </div>
 
-        {/* Preparation Step */}
-        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
+        {/* Info Note */}
+        <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
           <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 flex-shrink-0 text-amber-600" />
+            <AlertCircle className="h-5 w-5 flex-shrink-0 text-blue-600" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-amber-900">
-                Before you begin
+              <p className="text-sm font-medium text-blue-900">
+                Simple 2-Step Installation
               </p>
-              <p className="mt-1 text-sm text-amber-700">
-                First, run this SQL in your Supabase SQL Editor (Dashboard → SQL Editor):
-              </p>
-              <div className="mt-3 rounded bg-amber-100 p-3">
-                <code className="block text-xs font-mono text-amber-900 whitespace-pre-wrap break-all">
-{`CREATE OR REPLACE FUNCTION public.exec_sql(sql_query text)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
-BEGIN EXECUTE sql_query; END; $$;
-
-GRANT EXECUTE ON FUNCTION public.exec_sql(text) TO service_role;`}
-                </code>
-              </div>
-              <p className="mt-2 text-xs text-amber-700">
-                This function enables automated migration execution and will be automatically removed after installation for security.
+              <p className="mt-1 text-sm text-blue-700">
+                NotWordPress uses your Supabase service role key to run migrations via REST API.
+                All tables, functions, triggers, and security policies will be created automatically.
+                Just create one helper function in Step 1, and we'll handle the rest!
               </p>
             </div>
           </div>
@@ -244,16 +234,34 @@ GRANT EXECUTE ON FUNCTION public.exec_sql(text) TO service_role;`}
             </p>
           </div>
 
-          {/* Info Box */}
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+          {/* SQL Setup Instructions */}
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
             <div className="flex items-start gap-3">
-              <Key className="h-5 w-5 flex-shrink-0 text-blue-600" />
-              <div>
-                <p className="text-sm font-medium text-blue-900">Security Note</p>
-                <p className="mt-1 text-sm text-blue-700">
-                  Your credentials will be encrypted and securely stored in your
-                  database. The service role key is needed to create tables and run
-                  migrations during setup.
+              <AlertCircle className="h-5 w-5 flex-shrink-0 text-amber-600" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-amber-900">
+                  Before You Continue: Create Helper Function
+                </p>
+                <p className="mt-2 text-sm text-amber-700">
+                  Open your Supabase SQL Editor and run this SQL command:
+                </p>
+                <div className="mt-3 rounded bg-stone-900 p-3">
+                  <code className="block text-xs text-green-400 font-mono whitespace-pre-wrap">
+{`CREATE OR REPLACE FUNCTION public.exec_sql(sql_query text)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  EXECUTE sql_query;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.exec_sql(text) TO service_role;`}
+                  </code>
+                </div>
+                <p className="mt-2 text-sm text-amber-700">
+                  This function allows the installation wizard to run migrations using your service role key.
                 </p>
               </div>
             </div>

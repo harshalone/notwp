@@ -1,7 +1,43 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { promises as fs } from 'fs';
 import path from 'path';
+
+/**
+ * Helper function to execute SQL using Supabase REST API
+ * Uses the exec_sql RPC function that the user must create manually before installation
+ */
+async function executeSQLViaSupabase(supabaseUrl, serviceRoleKey, sql) {
+  try {
+    const response = await fetch(`${supabaseUrl}/rest/v1/rpc/exec_sql`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': serviceRoleKey,
+        'Authorization': `Bearer ${serviceRoleKey}`,
+      },
+      body: JSON.stringify({ sql_query: sql })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Supabase API error:', errorText);
+      return {
+        success: false,
+        error: `Failed to execute SQL. ${response.status === 404 ? 'Make sure you created the exec_sql function in Step 1.' : `Error: ${errorText}`}`
+      };
+    }
+
+    // The exec_sql function returns void, so response might be empty
+    // Just check if status is 2xx
+    return { success: true };
+  } catch (error) {
+    console.error('Error executing SQL via Supabase:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to execute SQL via Supabase API'
+    };
+  }
+}
 
 export async function POST(request) {
   try {
@@ -24,17 +60,6 @@ export async function POST(request) {
       );
     }
 
-    // Create Supabase client with service role key
-    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
-
-    // Read migration file
-    const migrationPath = path.join(
-      process.cwd(),
-      'database',
-      'migrations',
-      `${migrationId}_*.sql`
-    );
-
     // Find the migration file
     const migrationsDir = path.join(process.cwd(), 'database', 'migrations');
     const files = await fs.readdir(migrationsDir);
@@ -50,40 +75,31 @@ export async function POST(request) {
     const fullPath = path.join(migrationsDir, migrationFile);
     const sql = await fs.readFile(fullPath, 'utf-8');
 
-    // Execute SQL using the exec_sql function
-    // The exec_sql function must be created first in the database
+    // Execute SQL via Supabase REST API using exec_sql function
     try {
-      // Use the exec_sql RPC function to execute the migration
-      const { error: execError } = await supabase.rpc('exec_sql', {
-        sql_query: sql
-      });
+      console.log(`Executing migration ${migrationId}...`);
+      const result = await executeSQLViaSupabase(supabaseUrl, supabaseServiceRoleKey, sql);
 
-      if (execError) {
-        console.error('SQL execution error:', execError);
-        throw new Error(`Migration failed: ${execError.message}`);
+      if (!result.success) {
+        console.error('SQL execution error:', result.error);
+        throw new Error(`Migration failed: ${result.error}`);
       }
 
       // For the app_settings table, also save the credentials
       if (migrationId === '004') {
-        // Save the Supabase credentials to the settings table using service role key
-        // We need to update each setting individually to bypass RLS during initial setup
-        const settingsToUpdate = [
-          { key: 'supabase_url', value: supabaseUrl },
-          { key: 'supabase_anon_key', value: credentials.supabaseAnonKey },
-          { key: 'supabase_service_role_key', value: supabaseServiceRoleKey },
-          { key: 'installation_complete', value: 'true' },
-        ];
+        // Save the Supabase credentials to the settings table
+        const updateSettingsSQL = `
+          UPDATE public.nwp_app_settings SET setting_value = '${supabaseUrl}' WHERE setting_key = 'supabase_url';
+          UPDATE public.nwp_app_settings SET setting_value = '${credentials.supabaseAnonKey}' WHERE setting_key = 'supabase_anon_key';
+          UPDATE public.nwp_app_settings SET setting_value = '${supabaseServiceRoleKey}' WHERE setting_key = 'supabase_service_role_key';
+          UPDATE public.nwp_app_settings SET setting_value = 'true' WHERE setting_key = 'installation_complete';
+        `;
 
-        for (const setting of settingsToUpdate) {
-          const { error: updateError } = await supabase
-            .from('nwp_app_settings')
-            .update({ setting_value: setting.value })
-            .eq('setting_key', setting.key);
+        const updateResult = await executeSQLViaSupabase(supabaseUrl, supabaseServiceRoleKey, updateSettingsSQL);
 
-          if (updateError) {
-            console.error(`Error updating ${setting.key}:`, updateError);
-            // Continue with other settings even if one fails
-          }
+        if (!updateResult.success) {
+          console.error('Error updating settings:', updateResult.error);
+          // Continue anyway - settings can be updated manually if needed
         }
       }
 

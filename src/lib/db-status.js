@@ -26,16 +26,16 @@ export async function checkDatabaseStatus(supabaseUrl, supabaseAnonKey) {
     const { createClient } = await import('@supabase/supabase-js');
     const supabase = createClient(url, key);
 
-    // Try to query the nwp_accounts table
-    // We use a simple select query to check if the table exists
-    const { data, error } = await supabase
-      .from('nwp_accounts')
-      .select('id')
-      .limit(1);
+    // Check if installation is complete by querying the nwp_app_settings table
+    const { data: installData, error: installError } = await supabase
+      .from('nwp_app_settings')
+      .select('setting_value')
+      .eq('setting_key', 'installation_complete')
+      .maybeSingle();
 
-    if (error) {
+    if (installError) {
       // Check if it's a table doesn't exist error
-      if (error.message.includes('relation') || error.message.includes('does not exist')) {
+      if (installError.message.includes('relation') || installError.message.includes('does not exist')) {
         return {
           canConnect: true,
           tablesExist: false,
@@ -49,11 +49,21 @@ export async function checkDatabaseStatus(supabaseUrl, supabaseAnonKey) {
         canConnect: false,
         tablesExist: false,
         isSetup: false,
-        error: error.message,
+        error: installError.message,
       };
     }
 
-    // Success! We can connect and the table exists
+    // Check if installation_complete is set to 'true'
+    if (installData?.setting_value !== 'true') {
+      return {
+        canConnect: true,
+        tablesExist: true,
+        isSetup: false,
+        error: 'Installation not marked as complete',
+      };
+    }
+
+    // Success! Installation is complete
     return {
       canConnect: true,
       tablesExist: true,
