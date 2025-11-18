@@ -71,3 +71,32 @@ export function createAdminClient() {
     },
   });
 }
+
+/**
+ * Create a simple Supabase client for static generation (build time)
+ * Use this for generateStaticParams and generateMetadata
+ * This doesn't use cookies and is suitable for public data access
+ */
+export function createStaticClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error(
+      'Supabase credentials not found!\n\n' +
+      'Please complete the installation wizard at /install\n' +
+      'or manually add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to your .env.local file'
+    );
+  }
+
+  return createServerClient(supabaseUrl, supabaseKey, {
+    cookies: {
+      getAll() {
+        return [];
+      },
+      setAll() {
+        // Static generation doesn't need to set cookies
+      },
+    },
+  });
+}
