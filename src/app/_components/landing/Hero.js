@@ -1,4 +1,4 @@
-import { ArrowRight, Github } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 import Button from "./Button"
 
@@ -8,7 +8,7 @@ export default function Hero() {
       <div className="max-w-7xl mx-auto">
         <div className="text-center max-w-4xl mx-auto">
           <div className="inline-block mb-6 px-4 py-2 rounded-full bg-muted text-sm font-medium">
-            <span>Open Source | Free Forever | Community-Driven</span>
+            <span>Modern | Powerful | Community-Driven</span>
           </div>
 
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 text-balance">
@@ -27,8 +27,7 @@ export default function Hero() {
               </Button>
             </Link>
             <Button size="lg" variant="outline" className="w-full sm:w-auto bg-transparent">
-              <Github className="mr-2 h-4 w-4" />
-              View on GitHub
+              View Documentation
             </Button>
           </div>
 

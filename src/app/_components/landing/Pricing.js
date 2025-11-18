@@ -4,23 +4,23 @@ import Button from "./Button"
 export default function Pricing() {
   const plans = [
     {
-      name: "Free",
-      price: "$0",
-      description: "Perfect for personal projects",
-      features: ["Unlimited sites", "Community support", "Core features", "Open source"],
+      name: "Starter",
+      price: "$49",
+      description: "Perfect for single website",
+      features: ["1 website license", "Email support", "Core features", "Custom domains"],
     },
     {
       name: "Pro",
-      price: "$29",
-      description: "For professional developers",
-      features: ["Everything in Free", "Priority support", "Advanced plugins", "Custom domains"],
+      price: "$299",
+      description: "For multiple projects",
+      features: ["10 website license", "Priority support", "Advanced plugins", "Team collaboration"],
       popular: true,
     },
     {
-      name: "Enterprise",
-      price: "Custom",
-      description: "For large organizations",
-      features: ["Everything in Pro", "Dedicated support", "SLA guarantee", "Custom solutions"],
+      name: "Ultimate",
+      price: "$999",
+      description: "For unlimited websites",
+      features: ["Unlimited website license", "Dedicated support", "All features", "Custom solutions"],
     },
   ]
 
@@ -30,7 +30,7 @@ export default function Pricing() {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-balance">Simple, transparent pricing</h2>
           <p className="text-xl text-muted-foreground leading-relaxed">
-            Start free and scale as you grow. No hidden fees, no surprises.
+            Choose the plan that fits your needs. No hidden fees, no surprises.
           </p>
         </div>
 

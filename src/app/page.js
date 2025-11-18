@@ -17,7 +17,6 @@ import Roadmap from "./_components/landing/Roadmap"
 import Pricing from "./_components/landing/Pricing"
 import Documentation from "./_components/landing/Documentation"
 import Support from "./_components/landing/Support"
-import OpenSource from "./_components/landing/OpenSource"
 import FAQ from "./_components/landing/FAQ"
 import CTA from "./_components/landing/CTA"
 import Footer from "./_components/landing/Footer"
@@ -44,7 +43,6 @@ export default function Home() {
       <Pricing />
       <Documentation />
       <Support />
-      <OpenSource />
       <FAQ />
       <CTA />
       <Footer />

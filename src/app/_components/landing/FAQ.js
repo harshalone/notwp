@@ -8,9 +8,9 @@ export default function FAQ() {
 
   const faqs = [
     {
-      question: "Is NotWP really free?",
+      question: "What's included in the trial?",
       answer:
-        "Yes! NotWP is 100% free and open-source under the MIT license. You can use it for personal or commercial projects without any cost.",
+        "Our 14-day trial gives you full access to all Starter plan features. No credit card required to start, and you can upgrade anytime during or after the trial.",
     },
     {
       question: "How difficult is it to migrate from WordPress?",
@@ -28,9 +28,9 @@ export default function FAQ() {
         "NotWP works with any Node.js hosting provider. We recommend Vercel for the best experience, but you can also use AWS, DigitalOcean, or any other provider.",
     },
     {
-      question: "Do you offer professional support?",
+      question: "What support options are available?",
       answer:
-        "Yes! We offer community support for free users and priority support for Pro and Enterprise plans. Our average response time is under 2 hours.",
+        "We offer email support for Starter plans and priority support for Pro and Enterprise plans. Enterprise customers receive dedicated support with guaranteed SLA.",
     },
     {
       question: "Is NotWP production-ready?",

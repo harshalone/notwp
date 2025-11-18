@@ -17,6 +17,7 @@ const initialMigrations = [
   { id: '002', name: 'Auth Sync Trigger', status: 'pending' },
   { id: '003', name: 'Posts Table', status: 'pending' },
   { id: '004', name: 'App Settings Table', status: 'pending' },
+  { id: '005', name: 'Media Storage Bucket', status: 'pending' },
   { id: 'cleanup', name: 'Installation Verification', status: 'pending' },
 ];
 

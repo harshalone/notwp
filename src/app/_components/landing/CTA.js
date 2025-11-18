@@ -1,4 +1,4 @@
-import { ArrowRight, Github } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 import Button from "./Button"
 
@@ -16,16 +16,15 @@ export default function CTA() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/editor">
               <Button size="lg">
-                Get Started Free <ArrowRight className="ml-2 h-4 w-4" />
+                Get Started <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
             <Button size="lg" variant="outline">
-              <Github className="mr-2 h-4 w-4" />
-              Star on GitHub
+              View Pricing
             </Button>
           </div>
 
-          <p className="text-sm text-muted-foreground mt-6">No credit card required | Free forever | 5 minute setup</p>
+          <p className="text-sm text-muted-foreground mt-6">14-day trial available | 5 minute setup</p>
         </div>
       </div>
     </section>

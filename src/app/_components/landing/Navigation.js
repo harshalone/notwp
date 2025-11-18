@@ -9,14 +9,16 @@ export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg shadow-sm">
+      <div className="max-w-7xl mx-auto px-0">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-foreground rounded-md flex items-center justify-center text-background font-bold">
+            <div className="h-8 px-1 bg-foreground rounded-md flex items-center justify-center text-background font-bold">
               NW
-            </div>
-            <span className="text-xl font-bold">NotWP</span>
+            </div> 
+            <Link href="/" className="text-lg font-semibold">
+              NotWP
+            </Link>
           </div>
 
           <div className="hidden md:flex items-center gap-8">
@@ -25,10 +27,7 @@ export default function Navigation() {
             </a>
             <a href="#docs" className="text-sm hover:text-muted-foreground transition-colors">
               Docs
-            </a>
-            <a href="#community" className="text-sm hover:text-muted-foreground transition-colors">
-              Community
-            </a>
+            </a> 
             <a href="#pricing" className="text-sm hover:text-muted-foreground transition-colors">
               Pricing
             </a>

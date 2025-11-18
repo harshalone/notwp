@@ -14,7 +14,7 @@ export default function Plugins() {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-balance">Powerful plugin ecosystem</h2>
           <p className="text-xl text-muted-foreground leading-relaxed">
-            Extend functionality with thousands of free and premium plugins. Built and maintained by our amazing
+            Extend functionality with thousands of premium plugins. Built and maintained by our amazing
             community.
           </p>
         </div>
