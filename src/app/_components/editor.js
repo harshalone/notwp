@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   EditorRoot,
   EditorContent,
@@ -31,6 +31,7 @@ import {
   handleImagePaste,
   useEditor,
 } from 'novel';
+import { createClient } from '@/lib/supabase-browser';
 import {
   Type,
   Heading1,
@@ -709,7 +710,7 @@ const BubbleContent = ({ openNode, setOpenNode, openLink, setOpenLink, openColor
   );
 };
 
-export default function Editor() {
+export default function Editor({ postId, initialContent: initialContentProp }) {
   const [initialContent, setInitialContent] = useState(null);
   const [saveStatus, setSaveStatus] = useState('Saved');
   const [imageModalOpen, setImageModalOpen] = useState(false);
@@ -720,8 +721,66 @@ export default function Editor() {
   const [openColor, setOpenColor] = useState(false);
   const [openLink, setOpenLink] = useState(false);
 
+  // Debounce timer ref
+  const saveTimeoutRef = useRef(null);
+  const editorRef = useRef(null);
+
   useEffect(() => {
-    setInitialContent(defaultContent);
+    // Use provided initialContent or fall back to default
+    setInitialContent(initialContentProp || defaultContent);
+  }, [initialContentProp]);
+
+  // Debounced save function
+  const debouncedSave = useCallback(async (content) => {
+    if (!postId) return;
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('nwp_posts')
+        .update({
+          content: content,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('post_uid', postId);
+
+      if (error) {
+        console.error('Error saving content:', error);
+        setSaveStatus('Error saving');
+      } else {
+        setSaveStatus('Saved');
+      }
+    } catch (err) {
+      console.error('Error saving content:', err);
+      setSaveStatus('Error saving');
+    }
+  }, [postId]);
+
+  // Handle editor updates with debouncing
+  const handleEditorUpdate = useCallback(({ editor }) => {
+    setSaveStatus('Saving...');
+
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Get the JSON content from the editor
+    const content = editor.getJSON();
+
+    // Set new timeout for debounced save (2 seconds)
+    saveTimeoutRef.current = setTimeout(() => {
+      debouncedSave(content);
+    }, 2000);
+  }, [debouncedSave]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
   }, []);
 
   const modalHandlers = {
@@ -835,12 +894,12 @@ export default function Editor() {
     slashCommand,
     TaskList.configure({
       HTMLAttributes: {
-        class: 'not-prose pl-2',
+        class: 'not-prose pl-0 list-none',
       },
     }),
     TaskItem.configure({
       HTMLAttributes: {
-        class: 'flex gap-2 items-start my-4',
+        class: 'flex items-start gap-2 my-2',
       },
       nested: true,
     }),
@@ -898,10 +957,7 @@ export default function Editor() {
                 'focus:outline-none max-w-full pl-12 pr-8 py-12',
             },
           }}
-          onUpdate={() => {
-            setSaveStatus('Unsaved');
-            setTimeout(() => setSaveStatus('Saved'), 500);
-          }}
+          onUpdate={handleEditorUpdate}
           slotAfter={<ImageResizer />}
         >
           <EditorCommand className="z-50 h-auto max-h-[330px] overflow-y-auto rounded-xl border border-stone-200 bg-white px-1 py-2 shadow-xl transition-all">

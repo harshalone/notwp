@@ -17,10 +17,10 @@ export default function OnboardingLayout({ children }) {
 
   // Extract current step from URL and update whenever pathname changes
   React.useEffect(() => {
-    const stepMatch = pathname.match(/\/onboarding\/step-(\d+)/);
+    const stepMatch = pathname.match(/\/install\/step-(\d+)/);
     if (stepMatch) {
       setCurrentStep(parseInt(stepMatch[1]));
-    } else if (pathname === '/onboarding') {
+    } else if (pathname === '/install') {
       setCurrentStep(1);
     }
   }, [pathname]);

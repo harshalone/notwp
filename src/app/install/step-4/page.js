@@ -59,7 +59,7 @@ SUPABASE_SERVICE_ROLE_KEY=${creds.supabaseServiceRoleKey}`;
 
       if (!supabaseUrl || !serviceRoleKey) {
         alert('Credentials not found. Please restart the installation.');
-        router.push('/onboarding/step-1');
+        router.push('/install/step-1');
         return;
       }
 
@@ -90,7 +90,7 @@ SUPABASE_SERVICE_ROLE_KEY=${creds.supabaseServiceRoleKey}`;
       }
 
       // Now mark installation as complete in the database
-      const completeResponse = await fetch('/api/onboarding/complete-installation', {
+      const completeResponse = await fetch('/api/install/complete-installation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

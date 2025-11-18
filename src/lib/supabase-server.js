@@ -14,7 +14,7 @@ export async function createClient() {
   if (!supabaseUrl || !supabaseKey) {
     throw new Error(
       'Supabase credentials not found!\n\n' +
-      'Please complete the installation wizard at /onboarding\n' +
+      'Please complete the installation wizard at /install\n' +
       'or manually add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to your .env.local file'
     );
   }
@@ -55,7 +55,7 @@ export function createAdminClient() {
   if (!supabaseUrl || !supabaseServiceKey) {
     throw new Error(
       'Supabase admin credentials not found!\n\n' +
-      'Please complete the installation wizard at /onboarding\n' +
+      'Please complete the installation wizard at /install\n' +
       'or manually add SUPABASE_SERVICE_ROLE_KEY to your .env.local file'
     );
   }

@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS public.nwp_posts (
     author_uid UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     title VARCHAR(500) NOT NULL,
     slug VARCHAR(500) UNIQUE NOT NULL,
-    content TEXT,
+    content JSONB,
     excerpt TEXT,
     featured_image_url TEXT,
     post_type VARCHAR(50) DEFAULT 'post' CHECK (post_type IN ('post', 'page', 'draft', 'custom')),
@@ -29,7 +29,9 @@ CREATE TABLE IF NOT EXISTS public.nwp_posts (
     published_at TIMESTAMPTZ,
     scheduled_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    content_live JSONB,
+    featured_video_url TEXT
 );
 
 -- Create indexes for better query performance

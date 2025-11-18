@@ -31,7 +31,7 @@ export default function Step3Page() {
     // Check if we have credentials
     const credentials = sessionStorage.getItem('supabaseCredentials');
     if (!credentials) {
-      router.push('/onboarding/step-1');
+      router.push('/install/step-1');
     }
   }, [router]);
 
@@ -56,8 +56,8 @@ export default function Step3Page() {
         // Choose the right endpoint based on migration ID
         const isCleanup = migrations[i].id === 'cleanup';
         const endpoint = isCleanup
-          ? '/api/onboarding/cleanup'
-          : '/api/onboarding/run-migration';
+          ? '/api/install/cleanup'
+          : '/api/install/run-migration';
 
         // Run migration or cleanup
         const response = await fetch(endpoint, {
@@ -98,7 +98,7 @@ export default function Step3Page() {
 
       // All migrations successful
       // Save config to file
-      const saveConfigResponse = await fetch('/api/onboarding/save-config', {
+      const saveConfigResponse = await fetch('/api/install/save-config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: credentials,
@@ -116,7 +116,7 @@ export default function Step3Page() {
 
       // Auto-redirect to step 4 after 1 second
       setTimeout(() => {
-        router.push('/onboarding/step-4');
+        router.push('/install/step-4');
       }, 1000);
     } catch (error) {
       setHasError(true);
@@ -125,7 +125,7 @@ export default function Step3Page() {
   };
 
   const handleBack = () => {
-    router.push('/onboarding/step-2');
+    router.push('/install/step-2');
   };
 
   const allPending = migrations.every((m) => m.status === 'pending');

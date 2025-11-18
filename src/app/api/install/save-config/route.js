@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 /**
- * API Route: POST /api/onboarding/save-config
+ * API Route: POST /api/install/save-config
  * Save Supabase credentials to .env.local file during installation
  */
 export async function POST(request) {

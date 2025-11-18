@@ -159,22 +159,68 @@ body {
 .ProseMirror ul[data-type="taskList"] {
   list-style: none;
   padding-left: 0;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
 .ProseMirror ul[data-type="taskList"] li {
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .ProseMirror ul[data-type="taskList"] li > label {
   flex-shrink: 0;
-  margin-right: 0.5rem;
+  margin-right: 0;
+  margin-top: 0.375rem;
   user-select: none;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"] {
+  width: 1.125rem;
+  height: 1.125rem;
+  margin: 0;
+  cursor: pointer;
+  border-radius: 0.25rem;
+  border: 2px solid #d6d3d1;
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: white;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"]:checked {
+  background-color: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 0.3rem;
+  top: 0.1rem;
+  width: 0.35rem;
+  height: 0.6rem;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 
 .ProseMirror ul[data-type="taskList"] li > div {
   flex: 1;
+  min-width: 0;
+  line-height: 1.75;
+}
+
+.ProseMirror ul[data-type="taskList"] li > div p {
+  margin: 0;
+  line-height: 1.75;
 }
 
 .ProseMirror p.is-editor-empty:first-child::before {
@@ -191,6 +237,10 @@ body {
   color: #adb5bd;
   pointer-events: none;
   height: 0;
+}
+
+.ProseMirror ul[data-type="taskList"] li .is-empty::before {
+  display: none;
 }
 
 /* Drag Handle Styles */
@@ -237,4 +287,33 @@ body {
   outline: 2px solid #60a5fa;
   outline-offset: 2px;
   border-radius: 0.375rem;
+}
+
+/* Toast Notification Animations */
+@keyframes slideIn {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes reverseProgress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+.animate-slideIn {
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+.animate-reverseProgress {
+  animation: reverseProgress 3s linear forwards;
 }

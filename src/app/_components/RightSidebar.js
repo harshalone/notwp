@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Save, Eye, Upload, Calendar, Send, ImageIcon, Video } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Save, Eye, Calendar, Send, ImageIcon, Video, ChevronDown, ChevronUp, RefreshCw, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase-browser';
 
 // Function to generate slug from title
@@ -15,14 +16,27 @@ function generateSlug(title) {
     .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
 }
 
-export default function RightSidebar({ postId, post, onSaveReady, onPublishReady, onImageClick, onVideoClick }) {
+export default function RightSidebar({
+  postId,
+  post,
+  onSaveReady,
+  onPublishReady,
+  onImageClick,
+  onVideoClick,
+  selectedImage,
+  selectedVideo,
+  onImageRemove,
+  onVideoRemove
+}) {
+  const router = useRouter();
   const [title, setTitle] = useState('');
   const [metaTitle, setMetaTitle] = useState('');
   const [metaDescription, setMetaDescription] = useState('');
   const [slug, setSlug] = useState('');
-  const [featuredImage, setFeaturedImage] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const [showToast, setShowToast] = useState(false);
+  const [isMetaExpanded, setIsMetaExpanded] = useState(false);
 
   // Load post data when component mounts or post changes
   useEffect(() => {
@@ -34,6 +48,16 @@ export default function RightSidebar({ postId, post, onSaveReady, onPublishReady
     }
   }, [post]);
 
+  // Update dependency array to include selectedImage and selectedVideo
+  useEffect(() => {
+    if (onSaveReady) {
+      onSaveReady(handleSave);
+    }
+    if (onPublishReady) {
+      onPublishReady(handlePublish);
+    }
+  }, [onSaveReady, onPublishReady, title, slug, metaTitle, metaDescription, postId, selectedImage, selectedVideo]);
+
   // Handle title change and auto-generate slug if empty
   const handleTitleChange = (e) => {
     const newTitle = e.target.value;
@@ -42,6 +66,13 @@ export default function RightSidebar({ postId, post, onSaveReady, onPublishReady
     // Auto-generate slug if it's empty
     if (!slug) {
       setSlug(generateSlug(newTitle));
+    }
+  };
+
+  // Regenerate slug from current title
+  const handleRegenerateSlug = () => {
+    if (title) {
+      setSlug(generateSlug(title));
     }
   };
 
@@ -58,11 +89,29 @@ export default function RightSidebar({ postId, post, onSaveReady, onPublishReady
     return !!data; // Returns true if slug exists
   };
 
+  // Show toast notification
+  const showToastNotification = (message) => {
+    setSaveMessage(message);
+    setShowToast(true);
+    setTimeout(() => {
+      setShowToast(false);
+    }, 3000);
+  };
+
+  // Handle preview
+  const handlePreview = () => {
+    if (!slug || slug.trim() === '') {
+      alert('Please add a slug before previewing. The slug is required to generate the preview URL.');
+      return;
+    }
+    // Open preview in a new tab
+    window.open(`/dadmin/posts/preview/${slug}`, '_blank');
+  };
+
   // Save post data
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      setSaveMessage('');
 
       const supabase = createClient();
       const { error } = await supabase
@@ -72,18 +121,19 @@ export default function RightSidebar({ postId, post, onSaveReady, onPublishReady
           slug,
           meta_title: metaTitle,
           meta_description: metaDescription,
+          featured_image_url: selectedImage || null,
+          featured_video_url: selectedVideo || null,
         })
         .eq('post_uid', postId);
 
       if (error) {
-        setSaveMessage('Error saving changes');
+        showToastNotification('Error saving changes');
         console.error('Save error:', error);
       } else {
-        setSaveMessage('Changes saved successfully');
-        setTimeout(() => setSaveMessage(''), 3000);
+        showToastNotification('Changes saved successfully');
       }
     } catch (err) {
-      setSaveMessage('Error saving changes');
+      showToastNotification('Error saving changes');
       console.error('Save error:', err);
     } finally {
       setIsSaving(false);
@@ -116,49 +166,93 @@ export default function RightSidebar({ postId, post, onSaveReady, onPublishReady
       setSaveMessage('');
 
       const supabase = createClient();
+
+      // First, get the current post to access its content
+      const { data: currentPost, error: fetchError } = await supabase
+        .from('nwp_posts')
+        .select('content, post_status')
+        .eq('post_uid', postId)
+        .single();
+
+      if (fetchError) {
+        setSaveMessage('Error fetching post content');
+        console.error('Fetch error:', fetchError);
+        setIsSaving(false);
+        return;
+      }
+
+      // Prepare the update object
+      const updateData = {
+        title,
+        slug,
+        meta_title: metaTitle,
+        meta_description: metaDescription,
+        post_status: 'published',
+        content_live: currentPost.content, // Copy content to content_live
+        featured_image_url: selectedImage || null,
+        featured_video_url: selectedVideo || null,
+      };
+
+      // If this is the first time publishing, set published_at timestamp
+      if (currentPost.post_status !== 'published') {
+        updateData.published_at = new Date().toISOString();
+      }
+
       const { error } = await supabase
         .from('nwp_posts')
-        .update({
-          title,
-          slug,
-          meta_title: metaTitle,
-          meta_description: metaDescription,
-          post_status: 'published',
-        })
+        .update(updateData)
         .eq('post_uid', postId);
 
       if (error) {
-        setSaveMessage('Error publishing post');
+        showToastNotification('Error publishing post');
         console.error('Publish error:', error);
       } else {
-        setSaveMessage('Post published successfully!');
-        setTimeout(() => setSaveMessage(''), 3000);
+        showToastNotification('Post published successfully!');
       }
     } catch (err) {
-      setSaveMessage('Error publishing post');
+      showToastNotification('Error publishing post');
       console.error('Publish error:', err);
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Expose handlers to parent component
-  useEffect(() => {
-    if (onSaveReady) {
-      onSaveReady(handleSave);
-    }
-    if (onPublishReady) {
-      onPublishReady(handlePublish);
-    }
-  }, [onSaveReady, onPublishReady, title, slug, metaTitle, metaDescription, postId]);
 
   return (
-    <aside className="w-96 bg-white border-l border-stone-200 h-screen fixed right-0 top-16 overflow-y-auto">
-      <div className="p-6 space-y-6">
+    <>
+      {/* Toast Notification - Fixed at top center */}
+      {showToast && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-slideIn">
+          <div className="min-w-[320px] rounded-lg shadow-lg overflow-hidden bg-white border border-stone-300">
+            <div className="p-4 text-stone-900">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">{saveMessage}</span>
+                <button
+                  onClick={() => setShowToast(false)}
+                  className="ml-4 text-sm opacity-70 hover:opacity-100"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            {/* Progress Bar */}
+            <div className="h-1 bg-stone-200">
+              <div
+                className="h-full bg-stone-900 animate-reverseProgress"
+                style={{ width: '100%' }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <aside className="w-96 bg-white border-l border-stone-200 h-screen fixed right-0 top-16 overflow-y-auto">
+        <div className="p-6 space-y-6">
 
         {/* Action Buttons - Top Row */}
         <div className="grid grid-cols-3 gap-2">
           <button
+            onClick={handlePreview}
             className="px-3 py-2.5 bg-white text-stone-700 text-sm font-medium border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors cursor-pointer flex items-center justify-center gap-2"
             title="Preview"
           >
@@ -187,17 +281,6 @@ export default function RightSidebar({ postId, post, onSaveReady, onPublishReady
           </button>
         </div>
 
-        {/* Save Message */}
-        {saveMessage && (
-          <div className={`p-3 rounded-lg text-sm ${
-            saveMessage.includes('Error')
-              ? 'bg-red-50 text-red-800 border border-red-200'
-              : 'bg-green-50 text-green-800 border border-green-200'
-          }`}>
-            {saveMessage}
-          </div>
-        )}
-
         {/* Post Details */}
         <div className="space-y-4">
           <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide">
@@ -220,9 +303,19 @@ export default function RightSidebar({ postId, post, onSaveReady, onPublishReady
 
           {/* Slug */}
           <div>
-            <label className="block text-sm font-semibold text-stone-900 mb-2">
-              Slug
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-semibold text-stone-900">
+                Slug
+              </label>
+              <button
+                type="button"
+                onClick={handleRegenerateSlug}
+                className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Regenerate slug
+              </button>
+            </div>
             <input
               type="text"
               value={slug}
@@ -235,38 +328,84 @@ export default function RightSidebar({ postId, post, onSaveReady, onPublishReady
             </p>
           </div>
 
-          {/* Meta Title */}
-          <div>
-            <label className="block text-sm font-semibold text-stone-900 mb-2">
-              Meta Title
-            </label>
-            <input
-              type="text"
-              value={metaTitle}
-              onChange={(e) => setMetaTitle(e.target.value)}
-              placeholder="SEO title"
-              className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-            />
-            <p className="mt-1 text-xs text-stone-500">
-              {metaTitle.length}/60 characters
-            </p>
-          </div>
+          {/* Collapsible Meta Fields */}
+          <div className="border border-stone-200 rounded-lg">
+            <button
+              type="button"
+              onClick={() => setIsMetaExpanded(!isMetaExpanded)}
+              className="w-full flex items-center justify-between p-3 text-sm font-semibold text-stone-900 hover:bg-stone-50 rounded-lg transition-colors"
+            >
+              <span>SEO & Metadata</span>
+              {isMetaExpanded ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </button>
 
-          {/* Meta Description */}
-          <div>
-            <label className="block text-sm font-semibold text-stone-900 mb-2">
-              Meta Description
-            </label>
-            <textarea
-              value={metaDescription}
-              onChange={(e) => setMetaDescription(e.target.value)}
-              placeholder="SEO description"
-              rows={4}
-              className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
-            />
-            <p className="mt-1 text-xs text-stone-500">
-              {metaDescription.length}/160 characters
-            </p>
+            {isMetaExpanded && (
+              <div className="p-3 pt-0 space-y-4">
+                {/* Meta Title */}
+                <div>
+                  <label className="block text-sm font-semibold text-stone-900 mb-2">
+                    Meta Title
+                  </label>
+                  <input
+                    type="text"
+                    value={metaTitle}
+                    onChange={(e) => setMetaTitle(e.target.value)}
+                    placeholder="SEO title"
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  />
+                  <p className="mt-1 text-xs text-stone-500">
+                    {metaTitle.length}/60 characters
+                  </p>
+                </div>
+
+                {/* Meta Description */}
+                <div>
+                  <label className="block text-sm font-semibold text-stone-900 mb-2">
+                    Meta Description
+                  </label>
+                  <textarea
+                    value={metaDescription}
+                    onChange={(e) => setMetaDescription(e.target.value)}
+                    placeholder="SEO description"
+                    rows={4}
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+                  />
+                  <p className="mt-1 text-xs text-stone-500">
+                    {metaDescription.length}/160 characters
+                  </p>
+                </div>
+
+                {/* Categories */}
+                <div>
+                  <label className="block text-sm font-semibold text-stone-900 mb-2">
+                    Categories
+                  </label>
+                  <select className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                    <option>Select category</option>
+                    <option>Technology</option>
+                    <option>Design</option>
+                    <option>Business</option>
+                    <option>Lifestyle</option>
+                  </select>
+                </div>
+
+                {/* Tags */}
+                <div>
+                  <label className="block text-sm font-semibold text-stone-900 mb-2">
+                    Tags
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Add tags, separated by commas"
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Media Buttons */}
@@ -304,33 +443,64 @@ export default function RightSidebar({ postId, post, onSaveReady, onPublishReady
             </div>
           </div>
 
-          {/* Categories */}
-          <div>
-            <label className="block text-sm font-semibold text-stone-900 mb-2">
-              Categories
-            </label>
-            <select className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
-              <option>Select category</option>
-              <option>Technology</option>
-              <option>Design</option>
-              <option>Business</option>
-              <option>Lifestyle</option>
-            </select>
-          </div>
+          {/* Embed Previews */}
+          {(selectedImage || selectedVideo) && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide">
+                Media Previews
+              </h3>
 
-          {/* Tags */}
-          <div>
-            <label className="block text-sm font-semibold text-stone-900 mb-2">
-              Tags
-            </label>
-            <input
-              type="text"
-              placeholder="Add tags, separated by commas"
-              className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-            />
-          </div>
+              {/* Image Preview */}
+              {selectedImage && (
+                <div className="border border-stone-200 rounded-lg overflow-hidden">
+                  <div className="relative aspect-video bg-stone-100">
+                    <img
+                      src={selectedImage}
+                      alt="Selected image preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      onClick={onImageRemove}
+                      className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
+                      title="Remove image"
+                    >
+                      <X className="w-4 h-4 text-white" />
+                    </button>
+                  </div>
+                  <div className="p-3 bg-stone-50 border-t border-stone-200">
+                    <p className="text-xs text-stone-600 truncate">{selectedImage}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Video Preview */}
+              {selectedVideo && (
+                <div className="border border-stone-200 rounded-lg overflow-hidden">
+                  <div className="relative aspect-video bg-black">
+                    <iframe
+                      src={selectedVideo}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                    <button
+                      onClick={onVideoRemove}
+                      className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
+                      title="Remove video"
+                    >
+                      <X className="w-4 h-4 text-white" />
+                    </button>
+                  </div>
+                  <div className="p-3 bg-stone-50 border-t border-stone-200">
+                    <p className="text-xs text-stone-600 truncate">{selectedVideo}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </aside>
+    </>
   );
 }

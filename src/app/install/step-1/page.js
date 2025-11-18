@@ -68,7 +68,7 @@ export default function Step1Page() {
 
     try {
       // Test the connection
-      const response = await fetch('/api/onboarding/test-connection', {
+      const response = await fetch('/api/install/test-connection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -85,7 +85,7 @@ export default function Step1Page() {
       sessionStorage.setItem('supabaseCredentials', JSON.stringify(formData));
 
       // Navigate to step 2
-      router.push('/onboarding/step-2');
+      router.push('/install/step-2');
     } catch (error) {
       setErrors({
         general: error instanceof Error ? error.message : 'An unexpected error occurred',

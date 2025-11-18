@@ -13,7 +13,7 @@ export async function checkInstallation() {
     }
 
     const response = await fetch(
-      `/api/onboarding/check-installation?url=${encodeURIComponent(supabaseUrl)}&key=${encodeURIComponent(supabaseAnonKey)}`
+      `/api/install/check-installation?url=${encodeURIComponent(supabaseUrl)}&key=${encodeURIComponent(supabaseAnonKey)}`
     );
     const data = await response.json();
 

@@ -58,7 +58,7 @@ export default function Step2Page() {
     // Check if we have credentials
     const credentials = sessionStorage.getItem('supabaseCredentials');
     if (!credentials) {
-      router.push('/onboarding/step-1');
+      router.push('/install/step-1');
       return;
     }
     setIsConnected(true);
@@ -77,11 +77,11 @@ export default function Step2Page() {
   };
 
   const handleContinue = () => {
-    router.push('/onboarding/step-3');
+    router.push('/install/step-3');
   };
 
   const handleBack = () => {
-    router.push('/onboarding/step-1');
+    router.push('/install/step-1');
   };
 
   if (!isConnected) {

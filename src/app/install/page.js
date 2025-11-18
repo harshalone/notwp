@@ -23,7 +23,7 @@ export default function OnboardingPage() {
       }
 
       // Not installed, redirect to step 1
-      router.push('/onboarding/step-1');
+      router.push('/install/step-1');
       setChecking(false);
     }
 

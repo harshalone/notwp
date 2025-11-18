@@ -120,7 +120,7 @@ export default function PostsPage() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    className={`cursor-pointer pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                       activeTab === tab.id
                         ? 'border-stone-900 text-stone-900'
                         : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300'

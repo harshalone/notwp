@@ -3,20 +3,33 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 
-export default function VideoPopup({ isOpen, onClose }) {
+export default function VideoPopup({ isOpen, onClose, onVideoSelect }) {
   const [videoUrl, setVideoUrl] = useState('');
   const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
-  const handleInsert = () => {
-    const ytregex = new RegExp(
-      /^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$/
-    );
+  // Function to extract YouTube video ID and convert to embed URL
+  const getYouTubeEmbedUrl = (url) => {
+    const ytregex = /^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$/;
+    const match = url.match(ytregex);
 
-    if (videoUrl && ytregex.test(videoUrl)) {
+    if (match && match[5]) {
+      const videoId = match[5];
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    return null;
+  };
+
+  const handleInsert = () => {
+    const embedUrl = getYouTubeEmbedUrl(videoUrl);
+
+    if (embedUrl) {
       // Handle video insertion logic here
-      console.log('Insert YouTube video:', videoUrl);
+      if (onVideoSelect) {
+        onVideoSelect(embedUrl);
+      }
+      console.log('Insert YouTube video:', embedUrl);
       setVideoUrl('');
       setError('');
       onClose();

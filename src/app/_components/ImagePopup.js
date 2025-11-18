@@ -1,32 +1,132 @@
 'use client';
 
-import { useState } from 'react';
-import { X, Upload, Image as ImageIcon, Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Upload, Image as ImageIcon, Search, Loader2 } from 'lucide-react';
 
-export default function ImagePopup({ isOpen, onClose }) {
+export default function ImagePopup({ isOpen, onClose, onImageSelect }) {
   const [activeTab, setActiveTab] = useState('upload');
   const [imageUrl, setImageUrl] = useState('');
   const [gifSearch, setGifSearch] = useState('');
   const [unsplashSearch, setUnsplashSearch] = useState('');
+  const [unsplashResults, setUnsplashResults] = useState([]);
+  const [gifResults, setGifResults] = useState([]);
+  const [loadingUnsplash, setLoadingUnsplash] = useState(false);
+  const [loadingGifs, setLoadingGifs] = useState(false);
+
+  // Search Unsplash
+  const searchUnsplash = async (query) => {
+    if (!query.trim()) {
+      setUnsplashResults([]);
+      return;
+    }
+
+    setLoadingUnsplash(true);
+    try {
+      const response = await fetch(
+        `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=30&client_id=${process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY}`
+      );
+      const data = await response.json();
+      setUnsplashResults(data.results || []);
+    } catch (error) {
+      console.error('Error searching Unsplash:', error);
+      setUnsplashResults([]);
+    } finally {
+      setLoadingUnsplash(false);
+    }
+  };
+
+  // Search Tenor GIFs
+  const searchGifs = async (query) => {
+    if (!query.trim()) {
+      setGifResults([]);
+      return;
+    }
+
+    setLoadingGifs(true);
+    try {
+      const response = await fetch(
+        `https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(query)}&key=${process.env.NEXT_PUBLIC_TENOR_API_KEY}&limit=30&client_key=notwp_editor`
+      );
+      const data = await response.json();
+      setGifResults(data.results || []);
+    } catch (error) {
+      console.error('Error searching GIFs:', error);
+      setGifResults([]);
+    } finally {
+      setLoadingGifs(false);
+    }
+  };
+
+  // Debounced search for Unsplash
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (unsplashSearch) {
+        searchUnsplash(unsplashSearch);
+      } else {
+        setUnsplashResults([]);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [unsplashSearch]);
+
+  // Debounced search for GIFs
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (gifSearch) {
+        searchGifs(gifSearch);
+      } else {
+        setGifResults([]);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [gifSearch]);
 
   if (!isOpen) return null;
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Handle file upload logic here
-      console.log('Upload file:', file);
-      onClose();
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (onImageSelect) {
+          onImageSelect(event.target.result);
+        }
+        onClose();
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   const handleUrlInsert = () => {
     if (imageUrl) {
-      // Handle URL insertion logic here
-      console.log('Insert URL:', imageUrl);
+      if (onImageSelect) {
+        onImageSelect(imageUrl);
+      }
       setImageUrl('');
       onClose();
     }
+  };
+
+  const handleUnsplashImageSelect = (photo) => {
+    if (onImageSelect) {
+      onImageSelect(photo.urls.regular);
+    }
+    onClose();
+    // Trigger download tracking as per Unsplash API guidelines
+    if (photo.links?.download_location) {
+      fetch(photo.links.download_location, {
+        headers: {
+          Authorization: `Client-ID ${process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY}`
+        }
+      }).catch(err => console.error('Error tracking download:', err));
+    }
+  };
+
+  const handleGifSelect = (gif) => {
+    if (onImageSelect) {
+      onImageSelect(gif.media_formats?.gif?.url || gif.media_formats?.mediumgif?.url);
+    }
+    onClose();
   };
 
   return (
@@ -145,8 +245,33 @@ export default function ImagePopup({ isOpen, onClose }) {
                   />
                 </div>
               </div>
-              <div className="flex-1 flex items-center justify-center text-stone-500 text-lg">
-                GIF search coming soon (integrate with Giphy or Tenor API)
+              <div className="flex-1 overflow-y-auto">
+                {loadingGifs ? (
+                  <div className="flex items-center justify-center h-full">
+                    <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                  </div>
+                ) : gifResults.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-4">
+                    {gifResults.map((gif) => (
+                      <div
+                        key={gif.id}
+                        onClick={() => handleGifSelect(gif)}
+                        className="relative aspect-square rounded-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all group"
+                      >
+                        <img
+                          src={gif.media_formats?.tinygif?.url || gif.media_formats?.nanogif?.url}
+                          alt={gif.title || gif.content_description}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-stone-500 text-lg">
+                    {gifSearch ? 'No GIFs found' : 'Search for GIFs using Tenor'}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -165,8 +290,36 @@ export default function ImagePopup({ isOpen, onClose }) {
                   />
                 </div>
               </div>
-              <div className="flex-1 flex items-center justify-center text-stone-500 text-lg">
-                Unsplash search coming soon (integrate with Unsplash API)
+              <div className="flex-1 overflow-y-auto">
+                {loadingUnsplash ? (
+                  <div className="flex items-center justify-center h-full">
+                    <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                  </div>
+                ) : unsplashResults.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-4">
+                    {unsplashResults.map((photo) => (
+                      <div
+                        key={photo.id}
+                        onClick={() => handleUnsplashImageSelect(photo)}
+                        className="relative aspect-square rounded-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all group"
+                      >
+                        <img
+                          src={photo.urls.small}
+                          alt={photo.alt_description || photo.description}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <p className="text-white text-xs">Photo by {photo.user.name}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-stone-500 text-lg">
+                    {unsplashSearch ? 'No images found' : 'Search for images on Unsplash'}
+                  </div>
+                )}
               </div>
             </div>
           )}

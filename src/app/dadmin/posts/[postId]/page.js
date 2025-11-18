@@ -21,6 +21,8 @@ export default function PostEditorPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [post, setPost] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedVideo, setSelectedVideo] = useState(null);
 
   // Refs to hold the save and publish handlers from RightSidebar
   const saveHandlerRef = useRef(null);
@@ -50,6 +52,14 @@ export default function PostEditorPage() {
         }
 
         setPost(data);
+
+        // Load featured image and video if they exist
+        if (data.featured_image_url) {
+          setSelectedImage(data.featured_image_url);
+        }
+        if (data.featured_video_url) {
+          setSelectedVideo(data.featured_video_url);
+        }
       } catch (err) {
         console.error('Error:', err);
         setError('Failed to load post');
@@ -98,7 +108,7 @@ export default function PostEditorPage() {
         <AdminHeader />
 
         {/* Editor */}
-        <main className="pt-20 px-8 pb-8">
+        <main className="pt-15">
           <Editor postId={postId} initialContent={post?.content} />
         </main>
       </div>
@@ -111,16 +121,28 @@ export default function PostEditorPage() {
         onPublishReady={(handler) => publishHandlerRef.current = handler}
         onImageClick={() => setIsImagePopupOpen(true)}
         onVideoClick={() => setIsVideoPopupOpen(true)}
+        selectedImage={selectedImage}
+        selectedVideo={selectedVideo}
+        onImageRemove={() => setSelectedImage(null)}
+        onVideoRemove={() => setSelectedVideo(null)}
       />
 
       {/* Popups */}
       <ImagePopup
         isOpen={isImagePopupOpen}
         onClose={() => setIsImagePopupOpen(false)}
+        onImageSelect={(url) => {
+          setSelectedImage(url);
+          setIsImagePopupOpen(false);
+        }}
       />
       <VideoPopup
         isOpen={isVideoPopupOpen}
         onClose={() => setIsVideoPopupOpen(false)}
+        onVideoSelect={(url) => {
+          setSelectedVideo(url);
+          setIsVideoPopupOpen(false);
+        }}
       />
     </div>
   );
