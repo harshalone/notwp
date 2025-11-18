@@ -12,6 +12,8 @@ export default function PostsPage() {
   const [filteredPosts, setFilteredPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const postsPerPage = 10;
 
   // Fetch posts on mount and when activeTab changes
   useEffect(() => {
@@ -21,6 +23,7 @@ export default function PostsPage() {
   // Filter posts when activeTab or searchQuery changes
   useEffect(() => {
     filterPosts();
+    setCurrentPage(1); // Reset to first page when filters change
   }, [activeTab, posts, searchQuery]);
 
   const fetchPosts = async () => {
@@ -92,6 +95,16 @@ export default function PostsPage() {
     { id: 'draft', label: 'Draft', count: posts.filter(p => p.post_status === 'draft').length },
     { id: 'published', label: 'Published', count: posts.filter(p => p.post_status === 'published').length },
   ];
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
+  const startIndex = (currentPage - 1) * postsPerPage;
+  const endIndex = startIndex + postsPerPage;
+  const currentPosts = filteredPosts.slice(startIndex, endIndex);
+
+  const goToPage = (page) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
 
   return (
     <div className="flex min-h-screen bg-stone-50">
@@ -207,7 +220,7 @@ export default function PostsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-stone-200">
-                    {filteredPosts.map((post) => (
+                    {currentPosts.map((post) => (
                       <tr key={post.post_uid} className="hover:bg-stone-50 transition-colors">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
@@ -262,6 +275,67 @@ export default function PostsPage() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="px-6 py-4 border-t border-stone-200 flex items-center justify-between">
+                  <div className="text-sm text-stone-600">
+                    Showing {startIndex + 1} to {Math.min(endIndex, filteredPosts.length)} of {filteredPosts.length} posts
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => goToPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1.5 text-sm font-medium text-stone-700 bg-white border border-stone-200 rounded-lg hover:bg-stone-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+
+                    <div className="flex items-center gap-1">
+                      {[...Array(totalPages)].map((_, index) => {
+                        const page = index + 1;
+                        // Show first page, last page, current page, and pages around current
+                        const showPage =
+                          page === 1 ||
+                          page === totalPages ||
+                          (page >= currentPage - 1 && page <= currentPage + 1);
+
+                        const showEllipsis =
+                          (page === 2 && currentPage > 3) ||
+                          (page === totalPages - 1 && currentPage < totalPages - 2);
+
+                        if (showEllipsis) {
+                          return <span key={page} className="px-2 text-stone-400">...</span>;
+                        }
+
+                        if (!showPage) return null;
+
+                        return (
+                          <button
+                            key={page}
+                            onClick={() => goToPage(page)}
+                            className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                              currentPage === page
+                                ? 'bg-stone-900 text-white'
+                                : 'text-stone-700 bg-white border border-stone-200 hover:bg-stone-50'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      onClick={() => goToPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1.5 text-sm font-medium text-stone-700 bg-white border border-stone-200 rounded-lg hover:bg-stone-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </main>

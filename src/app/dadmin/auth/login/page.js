@@ -85,7 +85,6 @@ export default function LoginPage() {
 
       // Show success message
       setMessage('Login successful!');
-      }
 
       // Redirect to admin dashboard
       setTimeout(() => {
