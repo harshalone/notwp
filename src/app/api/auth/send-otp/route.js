@@ -18,11 +18,41 @@ export async function POST(request) {
 
     const supabase = await createClient();
 
-    // Send OTP via Supabase auth
-    const { data, error } = await supabase.auth.signInWithOtp({
+    // Check if user already exists in auth.users
+    const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
+
+    if (listError) {
+      console.error('Error checking users:', listError);
+      // Fall back to checking nwp_accounts table
+      const { data: account, error: accountError } = await supabase
+        .from('nwp_accounts')
+        .select('email')
+        .eq('email', email.toLowerCase().trim())
+        .single();
+
+      if (accountError || !account) {
+        return NextResponse.json(
+          { error: 'This email is not registered. Only existing users can log in.' },
+          { status: 403 }
+        );
+      }
+    } else {
+      // Check if user exists in the list
+      const userExists = users.some(u => u.email?.toLowerCase() === email.toLowerCase().trim());
+
+      if (!userExists) {
+        return NextResponse.json(
+          { error: 'This email is not registered. Only existing users can log in.' },
+          { status: 403 }
+        );
+      }
+    }
+
+    // Send OTP via Supabase auth - shouldCreateUser is false to prevent new registrations
+    const { error } = await supabase.auth.signInWithOtp({
       email: email.toLowerCase().trim(),
       options: {
-        shouldCreateUser: true,
+        shouldCreateUser: false,
         emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/dadmin`,
       },
     });

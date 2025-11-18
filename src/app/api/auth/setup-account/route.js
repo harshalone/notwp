@@ -3,10 +3,10 @@ import { createClient, createAdminClient } from '@/lib/supabase-server';
 
 /**
  * POST /api/auth/setup-account
- * Creates or updates user account in nwp_accounts table
- * Assigns admin role to the first user
+ * Verifies user account exists in nwp_accounts table
+ * New account creation is disabled - only existing users can log in
  */
-export async function POST(request) {
+export async function POST() {
   try {
     const supabase = await createClient();
 
@@ -20,20 +20,8 @@ export async function POST(request) {
       );
     }
 
-    // Use admin client to bypass RLS for checking total users
+    // Use admin client to bypass RLS
     const adminSupabase = createAdminClient();
-
-    // Check if this is the first user
-    const { count, error: countError } = await adminSupabase
-      .from('nwp_accounts')
-      .select('*', { count: 'exact', head: true });
-
-    if (countError) {
-      console.error('Error checking existing accounts:', countError);
-    }
-
-    const isFirstUser = count === 0;
-    const role = isFirstUser ? 'administrator' : 'subscriber';
 
     // Check if account already exists
     const { data: existingAccount, error: checkError } = await supabase
@@ -56,34 +44,11 @@ export async function POST(request) {
       // Account exists, just return it
       accountData = existingAccount;
     } else {
-      // Create new account - always use admin client to bypass RLS
-      // This is necessary because the user doesn't have an account yet to check permissions
-      const { data: newAccount, error: insertError } = await adminSupabase
-        .from('nwp_accounts')
-        .insert([
-          {
-            user_uid: user.id,
-            email: user.email,
-            display_name: user.email.split('@')[0],
-            role: role,
-            status: 'active',
-            email_verified: true,
-            last_login_at: new Date().toISOString(),
-          },
-        ])
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error('Error creating account:', insertError);
-        console.error('Insert error details:', JSON.stringify(insertError, null, 2));
-        return NextResponse.json(
-          { error: `Failed to create account: ${insertError.message}` },
-          { status: 500 }
-        );
-      }
-
-      accountData = newAccount;
+      // Account doesn't exist - registration is disabled
+      return NextResponse.json(
+        { error: 'Account not found. New registrations are disabled. Please contact an administrator.' },
+        { status: 403 }
+      );
     }
 
     // Update last login - use admin client to ensure it works
@@ -103,7 +68,6 @@ export async function POST(request) {
         email: accountData.email,
         role: accountData.role,
         displayName: accountData.display_name,
-        isFirstUser: isFirstUser,
       },
     });
   } catch (error) {

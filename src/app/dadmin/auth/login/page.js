@@ -84,10 +84,7 @@ export default function LoginPage() {
       }
 
       // Show success message
-      if (setupData.account?.isFirstUser) {
-        setMessage('Welcome! You have been assigned administrator privileges.');
-      } else {
-        setMessage('Login successful!');
+      setMessage('Login successful!');
       }
 
       // Redirect to admin dashboard
@@ -118,8 +115,11 @@ export default function LoginPage() {
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             {step === 'email'
-              ? 'Enter your email to receive a verification code'
+              ? 'Enter your registered email to receive a verification code'
               : 'Enter the 6-digit code sent to your email'}
+          </p>
+          <p className="mt-1 text-center text-xs text-gray-500">
+            Only existing users can log in. New registrations are disabled.
           </p>
         </div>
 
