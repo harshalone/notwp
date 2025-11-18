@@ -2,6 +2,17 @@ import { createClient, createStaticClient } from '@/lib/supabase-server';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
+import { generateHTML } from '@tiptap/html';
+import { StarterKit } from '@tiptap/starter-kit';
+import { Link as TiptapLink } from '@tiptap/extension-link';
+import { Image as TiptapImage } from '@tiptap/extension-image';
+import { Underline as TiptapUnderline } from '@tiptap/extension-underline';
+import { TaskList } from '@tiptap/extension-task-list';
+import { TaskItem } from '@tiptap/extension-task-item';
+import { Youtube } from '@tiptap/extension-youtube';
+import { Color } from '@tiptap/extension-color';
+import { TextStyle } from '@tiptap/extension-text-style';
+import { Highlight } from '@tiptap/extension-highlight';
 
 export const revalidate = 60; // Revalidate every 60 seconds
 
@@ -101,26 +112,100 @@ function formatDate(dateString) {
 }
 
 function renderContent(content) {
-  // If content is JSONB/JSON (from your editor), convert it to HTML
+  // If content is JSONB/JSON (from Tiptap editor), convert it to HTML
   if (typeof content === 'object' && content !== null) {
-    // This is a placeholder - you'll need to implement based on your editor format
-    // For now, let's assume it's an array of blocks
-    if (Array.isArray(content)) {
-      return content.map((block, index) => {
-        if (block.type === 'paragraph') {
-          return <p key={index} className="mb-4">{block.content}</p>;
-        }
-        if (block.type === 'heading') {
-          const Tag = `h${block.level || 2}`;
-          return <Tag key={index} className="font-bold mb-3 mt-6">{block.content}</Tag>;
-        }
-        // Add more block types as needed
-        return null;
-      });
+    try {
+      // Configure Tiptap extensions to match the editor
+      const extensions = [
+        StarterKit.configure({
+          bulletList: {
+            HTMLAttributes: {
+              class: 'list-disc list-outside leading-3 ml-6',
+            },
+          },
+          orderedList: {
+            HTMLAttributes: {
+              class: 'list-decimal list-outside leading-3 ml-6',
+            },
+          },
+          listItem: {
+            HTMLAttributes: {
+              class: 'leading-normal',
+            },
+          },
+          blockquote: {
+            HTMLAttributes: {
+              class: 'border-l-4 border-stone-300 pl-4 italic',
+            },
+          },
+          codeBlock: {
+            HTMLAttributes: {
+              class: 'rounded-md bg-stone-950 p-5 font-mono text-sm text-stone-50 my-4',
+            },
+          },
+          code: {
+            HTMLAttributes: {
+              class: 'rounded-md bg-stone-200 px-1.5 py-1 font-mono text-sm text-stone-900',
+            },
+          },
+          heading: {
+            HTMLAttributes: {
+              class: 'font-bold mb-3 mt-6 text-gray-800',
+            },
+          },
+          paragraph: {
+            HTMLAttributes: {
+              class: 'mb-4 text-lg leading-relaxed text-gray-800',
+            },
+          },
+        }),
+        TiptapLink.configure({
+          HTMLAttributes: {
+            class: 'text-blue-500 underline underline-offset-[3px] hover:text-blue-600 transition-colors',
+          },
+        }),
+        TiptapImage.configure({
+          HTMLAttributes: {
+            class: 'rounded-lg border border-stone-200 my-6 max-w-full h-auto',
+          },
+        }),
+        TiptapUnderline,
+        TaskList.configure({
+          HTMLAttributes: {
+            class: 'not-prose pl-0 list-none',
+          },
+        }),
+        TaskItem.configure({
+          HTMLAttributes: {
+            class: 'flex items-start gap-2 my-2',
+          },
+        }),
+        Youtube.configure({
+          HTMLAttributes: {
+            class: 'rounded-lg overflow-hidden my-6 w-full aspect-video',
+          },
+        }),
+        TextStyle,
+        Color,
+        Highlight.configure({
+          multicolor: true,
+        }),
+      ];
+
+      // Generate HTML from Tiptap JSON
+      const html = generateHTML(content, extensions);
+      return <div dangerouslySetInnerHTML={{ __html: html }} />;
+    } catch (error) {
+      console.error('Error rendering content:', error);
+      return (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <p className="text-red-800">Error rendering content. Please check the console for details.</p>
+        </div>
+      );
     }
   }
 
-  // If it's a string, render as HTML (sanitize in production!)
+  // If it's a string, render as HTML
   if (typeof content === 'string') {
     return <div dangerouslySetInnerHTML={{ __html: content }} />;
   }
@@ -140,19 +225,6 @@ export default async function BlogPostPage({ params }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Breadcrumb */}
-      <div className="bg-white border-b">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <nav className="flex items-center gap-2 text-sm text-gray-600">
-            <Link href="/" className="hover:text-blue-600">Home</Link>
-            <span>/</span>
-            <Link href="/blog" className="hover:text-blue-600">Blog</Link>
-            <span>/</span>
-            <span className="text-gray-900">{post.title}</span>
-          </nav>
-        </div>
-      </div>
-
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
         <header className="mb-8">
@@ -166,18 +238,16 @@ export default async function BlogPostPage({ params }) {
             </p>
           )}
 
-          {/* Date */}
-          <div className="flex items-center gap-2 mb-6 text-gray-600">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <time dateTime={post.published_at}>
-              {formatDate(post.published_at)}
-            </time>
-          </div>
-
-          {/* Stats */}
-          <div className="flex items-center gap-6 text-sm text-gray-600 pb-6 border-b">
+          {/* Date and Stats - Combined Row */}
+          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 pb-6">
+            <span className="flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <time dateTime={post.published_at}>
+                {formatDate(post.published_at)}
+              </time>
+            </span>
             <span className="flex items-center gap-1">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -202,10 +272,28 @@ export default async function BlogPostPage({ params }) {
               </span>
             )}
           </div>
+
+          {/* Breadcrumb */}
+          <nav className="flex items-center gap-2 text-sm text-gray-600 pb-6">
+            <Link href="/" className="hover:text-blue-600">Home</Link>
+            <span>/</span>
+            <Link href="/blog" className="hover:text-blue-600">Blog</Link>
+            <span>/</span>
+            <span className="text-gray-900">{post.title}</span>
+          </nav>
         </header>
 
-        {/* Featured Image */}
-        {post.featured_image_url && (
+        {/* Featured Media - Show video if available, otherwise show image */}
+        {post.featured_video_url ? (
+          <div className="relative w-full aspect-video mb-8 rounded-lg overflow-hidden">
+            <iframe
+              src={post.featured_video_url}
+              className="w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        ) : post.featured_image_url ? (
           <div className="relative w-full h-96 mb-8 rounded-lg overflow-hidden">
             <Image
               src={post.featured_image_url}
@@ -215,21 +303,10 @@ export default async function BlogPostPage({ params }) {
               priority
             />
           </div>
-        )}
-
-        {/* Featured Video */}
-        {post.featured_video_url && (
-          <div className="relative w-full aspect-video mb-8 rounded-lg overflow-hidden bg-black">
-            <video
-              src={post.featured_video_url}
-              controls
-              className="w-full h-full"
-            />
-          </div>
-        )}
+        ) : null}
 
         {/* Content */}
-        <div className="prose prose-lg max-w-none mb-12">
+        <div className="prose prose-lg max-w-none mb-12 text-gray-800 text-lg leading-relaxed">
           {post.content_live ? (
             renderContent(post.content_live)
           ) : (
