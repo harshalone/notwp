@@ -77,13 +77,7 @@ export default function AdminHeader() {
           >
             <div className="w-8 h-8 rounded-full bg-stone-900 flex items-center justify-center">
               <User className="w-5 h-5 text-white" />
-            </div>
-            <div className="text-left">
-              <p className="text-sm font-medium text-stone-900">
-                {account?.displayName || account?.username || 'User'}
-              </p>
-              <p className="text-xs text-stone-500">{account?.email || ''}</p>
-            </div>
+            </div> 
           </button>
 
           {/* User Dropdown */}

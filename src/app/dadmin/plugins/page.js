@@ -2,7 +2,110 @@
 
 import AdminSidebar from "@/app/_components/admin/AdminSidebar";
 import AdminHeader from "@/app/_components/admin/AdminHeader";
-import { Package, Plus, Search, Filter, Download } from 'lucide-react';
+import {
+  Plus, Search, Filter, Calendar, Mail,
+  Send, MessageSquare, ShoppingCart, ClipboardList, Newspaper,
+  TrendingUp, Users, Zap, CreditCard, BarChart3, Settings
+} from 'lucide-react';
+
+const plugins = [
+  {
+    id: 1,
+    name: 'Cal.com',
+    description: 'Scheduling and booking tool for appointments',
+    icon: Calendar,
+    category: 'Productivity',
+    installed: true
+  },
+  {
+    id: 2,
+    name: 'Gmail Integration',
+    description: 'Connect and manage your Gmail account',
+    icon: Mail,
+    category: 'Communication',
+    installed: false
+  },
+  {
+    id: 3,
+    name: 'Email Marketing',
+    description: 'Create and send email campaigns',
+    icon: Send,
+    category: 'Marketing',
+    installed: true
+  },
+  {
+    id: 4,
+    name: 'Testimonial Tool',
+    description: 'Collect and display customer testimonials',
+    icon: MessageSquare,
+    category: 'Content',
+    installed: false
+  },
+  {
+    id: 5,
+    name: 'Newsletter',
+    description: 'Build and manage newsletter subscriptions',
+    icon: Newspaper,
+    category: 'Marketing',
+    installed: true
+  },
+  {
+    id: 6,
+    name: 'eCommerce Tool',
+    description: 'Add shopping cart and payment features',
+    icon: ShoppingCart,
+    category: 'Sales',
+    installed: false
+  },
+  {
+    id: 7,
+    name: 'Quiz Builder',
+    description: 'Create interactive quizzes and surveys',
+    icon: ClipboardList,
+    category: 'Engagement',
+    installed: false
+  },
+  {
+    id: 8,
+    name: 'Analytics Pro',
+    description: 'Advanced analytics and insights',
+    icon: BarChart3,
+    category: 'Analytics',
+    installed: true
+  },
+  {
+    id: 9,
+    name: 'SEO Optimizer',
+    description: 'Optimize your site for search engines',
+    icon: TrendingUp,
+    category: 'SEO',
+    installed: false
+  },
+  {
+    id: 10,
+    name: 'User Management',
+    description: 'Manage users and permissions',
+    icon: Users,
+    category: 'Admin',
+    installed: true
+  },
+  {
+    id: 11,
+    name: 'Automation Hub',
+    description: 'Automate workflows and tasks',
+    icon: Zap,
+    category: 'Productivity',
+    installed: false
+  },
+  {
+    id: 12,
+    name: 'Payment Gateway',
+    description: 'Accept payments securely',
+    icon: CreditCard,
+    category: 'Sales',
+    installed: false
+  }
+];
 
 export default function PluginsPage() {
   return (
@@ -42,19 +145,45 @@ export default function PluginsPage() {
             </div>
           </div>
 
-          {/* Placeholder Content */}
-          <div className="bg-white rounded-lg border border-stone-200 p-12">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Package className="w-8 h-8 text-stone-400" />
-              </div>
-              <h2 className="text-xl font-semibold text-stone-900 mb-2">No plugins installed</h2>
-              <p className="text-stone-600 mb-6">Browse and install plugins to add new features to your site</p>
-              <button className="inline-flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-lg hover:bg-stone-800 transition-colors">
-                <Download className="w-4 h-4" />
-                Browse Plugin Directory
-              </button>
-            </div>
+          {/* Plugin Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
+            {plugins.map((plugin) => {
+              const IconComponent = plugin.icon;
+              return (
+                <div
+                  key={plugin.id}
+                  className="bg-white rounded-lg border border-stone-200 p-6 hover:shadow-lg transition-all duration-200 hover:border-stone-300 group flex flex-col"
+                >
+                  <div className="w-12 h-12 bg-stone-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-stone-900 transition-colors duration-200">
+                    <IconComponent className="w-6 h-6 text-stone-900 group-hover:text-white transition-colors duration-200" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-stone-900 mb-2">
+                    {plugin.name}
+                  </h3>
+                  <p className="text-sm text-stone-600 mb-4 flex-grow">
+                    {plugin.description}
+                  </p>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-stone-500 bg-stone-100 px-2 py-1 rounded">
+                        {plugin.category}
+                      </span>
+                    </div>
+                    {plugin.installed ? (
+                      <button className="cursor-pointer w-full flex items-center justify-center gap-2 px-4 py-2 bg-stone-900 text-white rounded-lg hover:bg-stone-800 transition-colors">
+                        <Settings className="w-4 h-4" />
+                        Installed
+                      </button>
+                    ) : (
+                      <button className="cursor-pointer w-full flex items-center justify-center gap-2 px-4 py-2 border border-stone-900 text-stone-900 rounded-lg hover:bg-stone-900 hover:text-white transition-colors">
+                        <Plus className="w-4 h-4" />
+                        Install
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </main>
       </div>
