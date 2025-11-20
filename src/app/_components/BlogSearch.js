@@ -96,7 +96,7 @@ export default function BlogSearch() {
           />
 
           {/* Results Dropdown */}
-          <div className="absolute w-full mt-2 bg-white rounded-lg shadow-xl border border-gray-200 z-20 max-h-96 overflow-y-auto">
+          <div className="absolute w-full mt-2 bg-white rounded-lg shadow-xl border border-gray-200 z-20 max-h-[500px] overflow-y-auto">
             {results.length === 0 ? (
               <div className="p-4 text-center text-gray-500">
                 {query ? 'No posts found' : 'Start typing to search'}
@@ -111,11 +111,11 @@ export default function BlogSearch() {
                       setShowResults(false);
                       setQuery('');
                     }}
-                    className="block px-4 py-3 hover:bg-gray-50 transition-colors"
+                    className="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
                   >
-                    <div className="flex items-start gap-3">
+                    <div className="flex items-center gap-4">
                       {post.featured_image_url ? (
-                        <div className="relative w-16 h-16 rounded flex-shrink-0 overflow-hidden">
+                        <div className="relative w-20 h-20 rounded-lg flex-shrink-0 overflow-hidden">
                           <Image
                             src={post.featured_image_url}
                             alt={post.title}
@@ -124,14 +124,14 @@ export default function BlogSearch() {
                           />
                         </div>
                       ) : (
-                        <div className="w-16 h-16 rounded flex-shrink-0 bg-gradient-to-br from-blue-500 to-purple-600" />
+                        <div className="w-20 h-20 rounded-lg flex-shrink-0 bg-gradient-to-br from-blue-500 to-purple-600" />
                       )}
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-gray-900 line-clamp-1">
+                        <h4 className="font-semibold text-gray-900 line-clamp-1 mb-1">
                           {post.title}
                         </h4>
                         {post.excerpt && (
-                          <p className="text-sm text-gray-600 line-clamp-2 mt-1">
+                          <p className="text-sm text-gray-600 line-clamp-2">
                             {post.excerpt}
                           </p>
                         )}
