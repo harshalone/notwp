@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase-server';
 import Link from 'next/link';
 import Image from 'next/image';
+import Navigation from '../_components/landing/Navigation';
 
 export const metadata = {
   title: 'Blog',
@@ -42,7 +43,8 @@ export default async function BlogPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <Navigation />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Blog</h1>

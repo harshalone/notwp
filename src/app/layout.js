@@ -12,8 +12,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "notwp",
-  description: "A modern content management system",
+  title: "notwp: WordPress Alternative§",
+  description: "A modern content management system build with Next.js and Supabase",
 };
 
 export default function RootLayout({ children }) {

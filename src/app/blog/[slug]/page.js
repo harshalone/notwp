@@ -13,6 +13,8 @@ import { Youtube } from '@tiptap/extension-youtube';
 import { Color } from '@tiptap/extension-color';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Highlight } from '@tiptap/extension-highlight';
+import Navigation from '@/app/_components/landing/Navigation';
+
 
 export const revalidate = 60; // Revalidate every 60 seconds
 
@@ -225,7 +227,8 @@ export default async function BlogPostPage({ params }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <Navigation />
+      <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         {/* Header */}
         <header className="mb-8">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
