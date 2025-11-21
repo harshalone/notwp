@@ -1,9 +1,9 @@
 export default function Showcase() {
   const sites = [
-    { name: "TechCorp", category: "Enterprise", image: "/modern-corporate-website.png" },
-    { name: "StyleShop", category: "E-commerce", image: "/modern-ecommerce-store.png" },
-    { name: "DevBlog", category: "Publishing", image: "/modern-blog-website.jpg" },
-    { name: "LearnHub", category: "Education", image: "/modern-education-platform.jpg" },
+    { name: "Odd Circles", category: "Community Building Platform", image: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/Odd-Circles-11-21-2025_03_38_PM.png" },
+    { name: "miniecom", category: "E-commerce", image: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/miniecom-create-website-and-e-commerce-store-11-21-2025_03_36_PM.png" },
+    { name: "Dev Shop", category: "Publishing", image: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/Circle-AI-11-21-2025_03_38_PM.png" },
+    { name: "Portfolio", category: "Education", image: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/Monetize-Social-Media-with-Ash-Lonare-11-21-2025_03_38_PM.png" },
   ]
 
   return (

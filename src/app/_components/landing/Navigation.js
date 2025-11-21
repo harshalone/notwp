@@ -22,15 +22,12 @@ export default function Navigation() {
           </div>
 
           <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-sm hover:text-muted-foreground transition-colors">
-              Features
-            </a>
-            <a href="#docs" className="text-sm hover:text-muted-foreground transition-colors">
+            <Link href="/blog" className="text-sm hover:text-muted-foreground transition-colors">
+              Blog
+            </Link>
+            <Link href="/docs" className="text-sm hover:text-muted-foreground transition-colors">
               Docs
-            </a> 
-            <a href="#pricing" className="text-sm hover:text-muted-foreground transition-colors">
-              Pricing
-            </a>
+            </Link>
             <Link href="/editor">
               <Button variant="default" size="sm">
                 Get Started
@@ -47,18 +44,12 @@ export default function Navigation() {
       {isOpen && (
         <div className="md:hidden border-t border-border bg-background">
           <div className="px-4 py-4 space-y-3">
-            <a href="#features" className="block text-sm py-2">
-              Features
-            </a>
-            <a href="#docs" className="block text-sm py-2">
+            <Link href="/blog" className="block text-sm py-2">
+              Blog
+            </Link>
+            <Link href="/docs" className="block text-sm py-2">
               Docs
-            </a>
-            <a href="#community" className="block text-sm py-2">
-              Community
-            </a>
-            <a href="#pricing" className="block text-sm py-2">
-              Pricing
-            </a>
+            </Link>
             <Link href="/editor">
               <Button variant="default" size="sm" className="w-full">
                 Get Started

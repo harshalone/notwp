@@ -24,7 +24,8 @@ import {
   Loader2,
   MoreVertical,
   Eye,
-  FolderOpen
+  FolderOpen,
+  Copy
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase-browser';
 import {
@@ -502,7 +503,7 @@ export default function MediaPage() {
                       return (
                         <div
                           key={folder.name}
-                          className={`group relative border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                          className={`group relative border-2 rounded-lg overflow-hidden cursor-pointer transition-all ${
                             isSelected
                               ? 'border-stone-900 bg-stone-50'
                               : 'border-stone-200 hover:border-stone-400 hover:shadow-md'
@@ -520,7 +521,7 @@ export default function MediaPage() {
                               e.stopPropagation();
                               toggleFileSelection(folder.name, true);
                             }}
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                           >
                             <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
                               isSelected
@@ -531,10 +532,15 @@ export default function MediaPage() {
                             </div>
                           </div>
 
-                          <Folder className="w-12 h-12 text-stone-400 mx-auto mb-2" />
-                          <p className="text-sm text-stone-900 text-center truncate font-medium">
-                            {folder.name}
-                          </p>
+                          <div className="aspect-square bg-stone-100 flex items-center justify-center">
+                            <Folder className="w-12 h-12 text-stone-400" />
+                          </div>
+
+                          <div className="p-3 bg-white">
+                            <p className="text-sm text-stone-900 text-center truncate font-medium">
+                              {folder.name}
+                            </p>
+                          </div>
                         </div>
                       );
                     })}
@@ -549,15 +555,15 @@ export default function MediaPage() {
                       return (
                         <div
                           key={file.name}
-                          className={`group relative border-2 rounded-lg overflow-hidden cursor-pointer transition-all ${
+                          className={`group relative border-2 rounded-lg overflow-hidden transition-all ${
                             isSelected
                               ? 'border-stone-900 bg-stone-50'
                               : 'border-stone-200 hover:border-stone-400 hover:shadow-md'
                           }`}
-                          onClick={() => toggleFileSelection(file.name, false)}
                         >
                           <div
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                            onClick={() => toggleFileSelection(file.name, false)}
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10 cursor-pointer"
                           >
                             <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
                               isSelected
@@ -568,19 +574,10 @@ export default function MediaPage() {
                             </div>
                           </div>
 
-                          <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handlePreview(file);
-                              }}
-                              className="p-1.5 bg-white rounded-lg shadow-lg hover:bg-stone-50"
-                            >
-                              <Eye className="w-4 h-4 text-stone-700" />
-                            </button>
-                          </div>
-
-                          <div className="aspect-square bg-stone-100 flex items-center justify-center">
+                          <div
+                            className="aspect-square bg-stone-100 flex items-center justify-center cursor-pointer"
+                            onClick={() => handlePreview(file)}
+                          >
                             {isImage ? (
                               <img
                                 src={publicUrl}
@@ -937,6 +934,17 @@ export default function MediaPage() {
             </div>
 
             <div className="flex gap-3 pt-4">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(previewFile.url);
+                  // Optional: You could add a toast notification here
+                  alert('URL copied to clipboard!');
+                }}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border border-stone-300 text-stone-700 rounded-lg hover:bg-stone-50 transition-colors"
+              >
+                <Copy className="w-4 h-4" />
+                Copy URL
+              </button>
               <button
                 onClick={() => handleDownload(previewFile.name)}
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border border-stone-300 text-stone-700 rounded-lg hover:bg-stone-50 transition-colors"

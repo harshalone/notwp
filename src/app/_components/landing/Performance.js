@@ -18,7 +18,7 @@ export default function Performance() {
                   <Gauge className="h-6 w-6" />
                 </div>
                 <div>
-                  <h3 className="font-bold mb-1">100/100 Lighthouse Score</h3>
+                  <h3 className="font-bold mb-1">96/100 Lighthouse Score</h3>
                   <p className="text-sm text-muted-foreground">Perfect scores across all metrics</p>
                 </div>
               </div>
@@ -39,7 +39,7 @@ export default function Performance() {
                 </div>
                 <div>
                   <h3 className="font-bold mb-1">99.99% Uptime</h3>
-                  <p className="text-sm text-muted-foreground">Always available, always reliable</p>
+                  <p className="text-sm text-muted-foreground">Always available, always reliable*</p>
                 </div>
               </div>
             </div>
@@ -47,7 +47,7 @@ export default function Performance() {
 
           <div className="relative">
             <img
-              src="/performance-metrics-dashboard.png"
+              src="https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/PageSpeed-Insights-11-21-2025_03_35_PM-11-21-2025_03_43_PM.png"
               alt="Performance Metrics"
               className="rounded-lg border border-border shadow-xl"
             />

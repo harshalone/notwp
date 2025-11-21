@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@aws-sdk/client-ses": "^3.936.0",
     "@measured/puck": "0.21.0-canary.c0db75c1",
     "@puckeditor/cloud-client": "^0.3.0",
     "@puckeditor/plugin-ai": "^0.3.0",

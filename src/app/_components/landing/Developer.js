@@ -47,15 +47,7 @@ export default function Developer() {
             </div>
           ))}
         </div>
-
-        <div className="p-6 rounded-lg bg-card border border-border">
-          <pre className="text-sm overflow-x-auto">
-            <code>
-              $ npx create-notwp-app my-site Creating project structure Installing dependencies Setting up database
-              Configuring environment Success! Your site is ready at http://localhost:3000
-            </code>
-          </pre>
-        </div>
+ 
       </div>
     </section>
   )

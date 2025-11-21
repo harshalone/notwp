@@ -15,7 +15,8 @@ import {
   BarChart3,
   ChevronLeft,
   ChevronRight,
-  User
+  User,
+  Mail
 } from 'lucide-react';
 
 export default function AdminSidebar() {
@@ -29,6 +30,7 @@ export default function AdminSidebar() {
     { icon: Layout, label: 'Pages', href: '/dadmin/pages' },
     { icon: Image, label: 'Media', href: '/dadmin/media' },
     { icon: Users, label: 'Users', href: '/dadmin/users' },
+    { icon: Mail, label: 'Newsletter', href: '/dadmin/newsletter' },
     { icon: Package, label: 'Plugins', href: '/dadmin/plugins' },
     { icon: BarChart3, label: 'Analytics', href: '/dadmin/analytics' },
     { icon: Settings, label: 'Settings', href: '/dadmin/settings' },
@@ -58,7 +60,9 @@ export default function AdminSidebar() {
       {/* Menu Items */}
       <nav className="py-2 flex-1">
         {menuItems.map((item, index) => {
-          const isActive = pathname === item.href;
+          const isActive = item.href === '/dadmin'
+            ? pathname === '/dadmin'
+            : pathname === item.href || pathname?.startsWith(item.href + '/');
           return (
             <Link
               key={index}

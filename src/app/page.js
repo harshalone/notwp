@@ -1,5 +1,6 @@
 import Navigation from "./_components/landing/Navigation"
 import Hero from "./_components/landing/Hero"
+import Video from "./_components/landing/Video"
 import Stats from "./_components/landing/Stats"
 import Features from "./_components/landing/Features"
 import WhyNotWP from "./_components/landing/WhyNotWP"
@@ -26,6 +27,7 @@ export default function Home() {
     <main className="min-h-screen">
       <Navigation />
       <Hero />
+      <Video />
       <Stats />
       <Features />
       <WhyNotWP />
@@ -40,7 +42,7 @@ export default function Home() {
       <Testimonials />
       <Showcase />
       <Roadmap />
-      <Pricing />
+      {/* <Pricing /> */}
       <Documentation />
       <Support />
       <FAQ />
