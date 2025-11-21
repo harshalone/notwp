@@ -1,14 +1,14 @@
-'use client';
-
-import { Puck } from "@measured/puck";
+import { Render } from "@measured/puck";
 import "@measured/puck/puck.css";
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { createClient } from '@/lib/supabase-browser';
-import { puckComponents } from './puck-components';
-import { createAiPlugin } from "@puckeditor/plugin-ai";
-import "@puckeditor/plugin-ai/styles.css";
+import { createAdminClient } from '@/lib/supabase-server';
+import { notFound } from 'next/navigation';
+import { puckComponents } from '@/app/_components/puck/puck-components';
 
-// Define your component blocks - now using imported components plus some basic blocks
+// Enable dynamic params for this route
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
+// Define the same config as in PuckEditor but for server-side rendering
 const config = {
   components: {
     // Basic building blocks
@@ -202,7 +202,7 @@ const config = {
         return (
           <blockquote className="border-l-4 border-blue-500 pl-4 py-2 mb-6 italic">
             <p className="text-lg mb-2">&ldquo;{quote}&rdquo;</p>
-            {author && <cite className="text-sm text-gray-600">— {author}</cite>}
+            {author && <cite className="text-sm text-gray-600"> {author}</cite>}
           </blockquote>
         );
       },
@@ -260,7 +260,7 @@ const config = {
               <iframe
                 src={url}
                 className="absolute inset-0 w-full h-full"
-                frameBorder="0"
+                style={{ border: 0 }}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
@@ -273,203 +273,51 @@ const config = {
     // Import all the comprehensive components
     ...puckComponents,
   },
-  categories: {
-    navigation: {
-      components: ['Site Header', 'Site Footer', 'Custom Header', 'Custom Footer'],
-    },
-    introduction: {
-      components: ['Hero'],
-    },
-    content: {
-      components: ['Bento', 'ArticleCard', 'FeatureCards', 'CardGrid', 'TwoColumn', 'Articles', 'Faq', 'Cta'],
-    },
-    'social-proof': {
-      components: ['Testimonials', 'Stats', 'Customers'],
-      title: 'Social Proof',
-    },
-    business: {
-      components: ['Pricing', 'ContactUs'],
-    },
-    basic: {
-      components: ['HeadingBlock', 'TextBlock', 'ImageBlock', 'ButtonBlock', 'ColumnsBlock', 'QuoteBlock', 'DividerBlock', 'VideoBlock'],
-      title: 'Basic Blocks',
-    },
-  },
 };
 
-export default function PuckEditor({ pageId, initialData, pageSlug }) {
-  const [data, setData] = useState(initialData || { content: [], root: {} });
-  const [saveStatus, setSaveStatus] = useState('Saved');
-  const [isLoading, setIsLoading] = useState(false);
-  const saveTimeoutRef = useRef(null);
+export default async function PreviewPage({ params }) {
+  const { slug } = await params;
 
-  // Load initial data from database if not provided or if it's empty
-  useEffect(() => {
-    async function loadData() {
-      if (!pageId) return;
+  console.log('Preview requested for slug:', slug);
 
-      // Skip loading if we already have valid initial data with content
-      if (initialData && initialData.content && initialData.content.length > 0) {
-        setData(initialData);
-        return;
-      }
+  if (!slug) {
+    console.error('No slug provided in params');
+    notFound();
+  }
 
-      setIsLoading(true);
-      try {
-        const supabase = createClient();
-        const { data: pageData, error } = await supabase
-          .from('nwp_pages')
-          .select('content')
-          .eq('page_uid', pageId)
-          .single();
+  // Create Supabase admin client to bypass RLS for preview
+  const supabase = createAdminClient();
 
-        if (error) {
-          console.error('Error loading page data:', error.message || error);
-          // Initialize with empty data if there's an error
-          setData({ content: [], root: {} });
-          return;
-        }
+  // Fetch the page data by slug
+  const { data: pageData, error } = await supabase
+    .from('nwp_pages')
+    .select('*')
+    .eq('slug', slug)
+    .single();
 
-        if (pageData?.content) {
-          // Parse content if it's a string, otherwise use as-is
-          const parsedContent = typeof pageData.content === 'string'
-            ? JSON.parse(pageData.content)
-            : pageData.content;
-          setData(parsedContent);
-        } else {
-          // Initialize with empty data if content is null
-          setData({ content: [], root: {} });
-        }
-      } catch (err) {
-        console.error('Error loading page data:', err.message || err);
-        // Initialize with empty data on error
-        setData({ content: [], root: {} });
-      } finally {
-        setIsLoading(false);
-      }
-    }
+  console.log('Database query result:', { pageData, error });
 
-    loadData();
-  }, [pageId]);
+  if (error) {
+    console.error('Database error:', error);
+    notFound();
+  }
 
-  // Debounced save function
-  const debouncedSave = useCallback(async (data) => {
-    if (!pageId) return;
+  if (!pageData) {
+    console.error('No page found for slug:', slug);
+    notFound();
+  }
 
-    try {
-      setSaveStatus('Saving...');
-      const supabase = createClient();
-
-      const { error } = await supabase
-        .from('nwp_pages')
-        .update({
-          content: data,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('page_uid', pageId);
-
-      if (error) {
-        console.error('Error saving page data:', error);
-        setSaveStatus('Error saving');
-      } else {
-        setSaveStatus('Saved');
-      }
-    } catch (err) {
-      console.error('Error saving page data:', err);
-      setSaveStatus('Error saving');
-    }
-  }, [pageId]);
-
-  // Handle data changes with debouncing
-  const handleChange = useCallback((newData) => {
-    setData(newData);
-    setSaveStatus('Saving...');
-
-    // Clear existing timeout
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    // Set new timeout for debounced save (2 seconds)
-    saveTimeoutRef.current = setTimeout(() => {
-      debouncedSave(newData);
-    }, 2000);
-  }, [debouncedSave]);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Handle publish
-  const handlePublish = async (data) => {
-    if (!pageId) return;
-
-    try {
-      const supabase = createClient();
-
-      const { error } = await supabase
-        .from('nwp_pages')
-        .update({
-          content: data,
-          page_status: 'published',
-          published_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('page_uid', pageId);
-
-      if (error) {
-        console.error('Error publishing page:', error);
-        alert('Failed to publish page');
-      } else {
-        alert('Page published successfully!');
-      }
-    } catch (err) {
-      console.error('Error publishing page:', err);
-      alert('Failed to publish page');
-    }
-  };
-
-  // Handle preview
-  const handlePreview = () => {
-    if (pageSlug) {
-      window.open(`/dadmin/pages/preview/${pageSlug}`, '_blank');
-    } else {
-      alert('Page slug not available for preview');
-    }
-  };
+  // Parse the content data
+  let data = { content: [], root: {} };
+  if (pageData.content) {
+    data = typeof pageData.content === 'string'
+      ? JSON.parse(pageData.content)
+      : pageData.content;
+  }
 
   return (
-    <div className="w-full h-screen">
-      {/* Puck Editor */}
-      <Puck
-        config={config}
-        data={data}
-        onPublish={handlePublish}
-        onChange={handleChange}
-        headerTitle={saveStatus}
-        plugins={[
-          createAiPlugin(),
-        ]}
-        overrides={{
-          headerActions: ({ children }) => (
-            <>
-              <button
-                onClick={handlePreview}
-                disabled={!pageSlug}
-                className="px-4 py-2 text-sm font-medium text-stone-700 bg-white border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                Preview
-              </button>
-              {children}
-            </>
-          ),
-        }}
-      />
+    <div className="min-h-screen bg-white">
+      <Render config={config} data={data} />
     </div>
   );
 }

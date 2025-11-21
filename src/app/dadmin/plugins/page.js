@@ -5,7 +5,8 @@ import AdminHeader from "@/app/_components/admin/AdminHeader";
 import {
   Plus, Search, Filter, Calendar, Mail,
   Send, MessageSquare, ShoppingCart, ClipboardList, Newspaper,
-  TrendingUp, Users, Zap, CreditCard, BarChart3, Settings
+  TrendingUp, Users, Zap, CreditCard, BarChart3, Settings,
+  MessagesSquare, CalendarDays, UsersRound, MessageCircle, Headphones, FileText
 } from 'lucide-react';
 
 const plugins = [
@@ -103,6 +104,54 @@ const plugins = [
     description: 'Accept payments securely',
     icon: CreditCard,
     category: 'Sales',
+    installed: false
+  },
+  {
+    id: 13,
+    name: 'Forum',
+    description: 'Create discussion forums for your community',
+    icon: MessagesSquare,
+    category: 'Community',
+    installed: false
+  },
+  {
+    id: 14,
+    name: 'Events',
+    description: 'Manage and promote events',
+    icon: CalendarDays,
+    category: 'Engagement',
+    installed: false
+  },
+  {
+    id: 15,
+    name: 'Communities',
+    description: 'Build and manage member communities',
+    icon: UsersRound,
+    category: 'Community',
+    installed: false
+  },
+  {
+    id: 16,
+    name: 'Live Chat',
+    description: 'Real-time chat with visitors',
+    icon: MessageCircle,
+    category: 'Communication',
+    installed: false
+  },
+  {
+    id: 17,
+    name: 'Customer Support',
+    description: 'Help desk and ticketing system',
+    icon: Headphones,
+    category: 'Support',
+    installed: false
+  },
+  {
+    id: 18,
+    name: 'Contact Us',
+    description: 'Contact form builder and manager',
+    icon: FileText,
+    category: 'Communication',
     installed: false
   }
 ];

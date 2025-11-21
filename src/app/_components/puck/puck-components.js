@@ -1,9 +1,28 @@
 // Puck Component Configurations
 // Organized by category: Navigation, Introduction, Content, Social Proof, Business
 
+import Navigation from '../landing/Navigation';
+import Footer from '../landing/Footer';
+
 export const puckComponents = {
   // ==================== NAVIGATION ====================
-  Header: {
+  'Site Header': {
+    fields: {},
+    defaultProps: {},
+    render: () => {
+      return <Navigation />;
+    },
+  },
+
+  'Site Footer': {
+    fields: {},
+    defaultProps: {},
+    render: () => {
+      return <Footer />;
+    },
+  },
+
+  'Custom Header': {
     fields: {
       logo: { type: "text", label: "Logo URL" },
       logoAlt: { type: "text", label: "Logo Alt Text" },
@@ -68,7 +87,7 @@ export const puckComponents = {
     },
   },
 
-  Footer: {
+  'Custom Footer': {
     fields: {
       logo: { type: "text", label: "Logo URL" },
       logoAlt: { type: "text", label: "Logo Alt Text" },

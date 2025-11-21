@@ -91,6 +91,7 @@ export default function PageEditorPage() {
       <PuckEditor
         pageId={pageId}
         initialData={page?.content}
+        pageSlug={page?.slug}
       />
     </div>
   );

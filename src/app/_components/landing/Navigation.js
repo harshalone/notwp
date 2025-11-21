@@ -10,7 +10,7 @@ export default function Navigation() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg shadow-sm">
-      <div className="max-w-7xl mx-auto px-0">
+      <div className="w-full px-6">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
             <div className="h-8 px-1 bg-foreground rounded-md flex items-center justify-center text-background font-bold">
