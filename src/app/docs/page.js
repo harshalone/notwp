@@ -15,6 +15,7 @@ import { Youtube } from '@tiptap/extension-youtube';
 import { Color } from '@tiptap/extension-color';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Highlight } from '@tiptap/extension-highlight';
+import { Loader2 } from 'lucide-react';
 
 export default function DocsPage() {
   const [docs, setDocs] = useState([]);
@@ -292,13 +293,17 @@ export default function DocsPage() {
         <div className="px-8 py-8">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-3 text-gray-600">Loading documentation...</span>
+              <div className="text-center">
+                <Loader2 className="w-8 h-8 animate-spin text-stone-900 mx-auto mb-4" />
+                <p className="text-sm text-stone-600">Loading documentation...</p>
+              </div>
             </div>
           ) : loadingDoc ? (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-3 text-gray-600">Loading...</span>
+              <div className="text-center">
+                <Loader2 className="w-8 h-8 animate-spin text-stone-900 mx-auto mb-4" />
+                <p className="text-sm text-stone-600">Loading...</p>
+              </div>
             </div>
           ) : searchQuery ? (
             <div>
