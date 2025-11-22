@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import AdminSidebar from "@/app/_components/admin/AdminSidebar";
 import AdminHeader from "@/app/_components/admin/AdminHeader";
-import { Mail, Users, Send, ArrowRight, Settings, FileSpreadsheet, Import } from 'lucide-react';
+import { Mail, Users, Send, Settings, Import, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import SubscriberStats from './components/SubscriberStats';
+import SubscribersTable from './components/SubscribersTable';
 
 export default function NewsletterPage() {
   const [stats, setStats] = useState({
@@ -15,9 +16,15 @@ export default function NewsletterPage() {
     emailsSent: 0
   });
   const [loading, setLoading] = useState(true);
+  const [subscribers, setSubscribers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchStats();
+    fetchSubscribers();
   }, []);
 
   const fetchStats = async () => {
@@ -36,44 +43,60 @@ export default function NewsletterPage() {
     }
   };
 
-  const navigationCards = [
-    {
-      title: 'Subscribers',
-      description: 'View and manage all your newsletter subscribers',
-      icon: Users,
-      href: '/dadmin/newsletter/subscribers',
-      color: 'bg-blue-50 text-blue-600',
-      borderColor: 'border-blue-100 hover:border-blue-300',
-      count: stats.active
-    },
-    {
-      title: 'Compose Email',
-      description: 'Create and send emails to your subscribers',
-      icon: Send,
-      href: '/dadmin/newsletter/compose',
-      color: 'bg-green-50 text-green-600',
-      borderColor: 'border-green-100 hover:border-green-300',
-      count: null
-    },
-    {
-      title: 'Import & Export',
-      description: 'Import subscribers from CSV or export your list',
-      icon: FileSpreadsheet,
-      href: '/dadmin/newsletter/import-export',
-      color: 'bg-orange-50 text-orange-600',
-      borderColor: 'border-orange-100 hover:border-orange-300',
-      count: null
-    },
-    {
-      title: 'Email Settings',
-      description: 'Configure AWS SES for sending newsletters',
-      icon: Settings,
-      href: '/dadmin/newsletter/settings',
-      color: 'bg-purple-50 text-purple-600',
-      borderColor: 'border-purple-100 hover:border-purple-300',
-      count: null
+  const fetchSubscribers = async () => {
+    try {
+      const response = await fetch('/api/newsletter/subscribers');
+      const data = await response.json();
+
+      if (data.success) {
+        setSubscribers(data.subscribers);
+      }
+    } catch (error) {
+      console.error('Error fetching subscribers:', error);
     }
-  ];
+  };
+
+  const handleDeleteSubscriber = async (id) => {
+    try {
+      const response = await fetch(`/api/newsletter/subscribers/${id}`, {
+        method: 'DELETE'
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        await fetchSubscribers();
+        await fetchStats();
+      } else {
+        alert('Failed to unsubscribe: ' + data.error);
+      }
+    } catch (error) {
+      console.error('Error deleting subscriber:', error);
+      alert('Failed to unsubscribe');
+    }
+  };
+
+  const filteredSubscribers = subscribers.filter(subscriber => {
+    const matchesSearch =
+      subscriber.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      subscriber.name?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus =
+      filterStatus === 'all' || subscriber.status === filterStatus;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredSubscribers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedSubscribers = filteredSubscribers.slice(startIndex, endIndex);
+
+  // Reset to page 1 when search or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus]);
 
   return (
     <div className="flex min-h-screen bg-stone-50">
@@ -142,60 +165,115 @@ export default function NewsletterPage() {
             <>
               <SubscriberStats stats={stats} />
 
-              {/* Navigation Cards */}
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-stone-900">Quick Actions</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {navigationCards.map((card) => {
-                    const Icon = card.icon;
-                    return (
-                      <Link
-                        key={card.href}
-                        href={card.href}
-                        className={`bg-white rounded-lg border-2 ${card.borderColor} p-6 transition-all hover:shadow-md group`}
-                      >
-                        <div className="flex items-start justify-between mb-4">
-                          <div className={`w-12 h-12 rounded-lg ${card.color} flex items-center justify-center`}>
-                            <Icon className="w-6 h-6" />
-                          </div>
-                          <ArrowRight className="w-5 h-5 text-stone-400 group-hover:text-stone-900 group-hover:translate-x-1 transition-all" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-stone-900 mb-2">
-                          {card.title}
-                          {card.count !== null && (
-                            <span className="ml-2 text-sm font-normal text-stone-500">
-                              ({card.count})
-                            </span>
-                          )}
-                        </h3>
-                        <p className="text-sm text-stone-600">{card.description}</p>
-                      </Link>
-                    );
-                  })}
+              {/* Subscribers Section */}
+              <div className="space-y-4 mt-8">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold text-stone-900">
+                    Recent Subscribers
+                    <span className="ml-2 text-sm font-normal text-stone-500">
+                      ({filteredSubscribers.length} total)
+                    </span>
+                  </h2>
+                  <Link
+                    href="/dadmin/newsletter/subscribers"
+                    className="text-sm font-medium text-stone-700 hover:text-stone-900"
+                  >
+                    View All →
+                  </Link>
                 </div>
-              </div>
 
-              {/* Info Card */}
-              <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <Mail className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h3 className="font-semibold text-blue-900 mb-1">Email Service Setup</h3>
-                      <p className="text-sm text-blue-700 mb-3">
-                        Configure AWS SES to start sending newsletter emails to your subscribers.
-                      </p>
-                      <Link
-                        href="/dadmin/newsletter/settings"
-                        className="inline-flex items-center gap-2 text-sm font-medium text-blue-700 hover:text-blue-900"
-                      >
-                        <Settings className="w-4 h-4" />
-                        Configure Email Settings
-                        <ArrowRight className="w-4 h-4" />
-                      </Link>
+                {/* Search and Filter Bar */}
+                <div className="bg-white rounded-lg border border-stone-200 p-4">
+                  <div className="flex gap-4">
+                    <div className="flex-1 relative">
+                      <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-stone-400" />
+                      <input
+                        type="text"
+                        placeholder="Search subscribers by email or name..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-900"
+                      />
                     </div>
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      className="px-4 py-2 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-900"
+                    >
+                      <option value="all">All Status</option>
+                      <option value="active">Active</option>
+                      <option value="unsubscribed">Unsubscribed</option>
+                    </select>
                   </div>
                 </div>
+
+                {/* Subscribers Table */}
+                {paginatedSubscribers.length === 0 ? (
+                  <div className="bg-white rounded-lg border border-stone-200 p-12">
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Users className="w-8 h-8 text-stone-400" />
+                      </div>
+                      <h3 className="text-xl font-semibold text-stone-900 mb-2">
+                        {searchTerm || filterStatus !== 'all' ? 'No subscribers found' : 'No subscribers yet'}
+                      </h3>
+                      <p className="text-stone-600">
+                        {searchTerm || filterStatus !== 'all'
+                          ? 'Try adjusting your search or filter criteria'
+                          : 'Subscribers will appear here once they sign up for your newsletter'}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <SubscribersTable
+                      subscribers={paginatedSubscribers}
+                      onDelete={handleDeleteSubscriber}
+                    />
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-between bg-white rounded-lg border border-stone-200 px-6 py-4">
+                        <div className="text-sm text-stone-600">
+                          Showing {startIndex + 1} to {Math.min(endIndex, filteredSubscribers.length)} of {filteredSubscribers.length} subscribers
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={currentPage === 1}
+                            className="px-3 py-1.5 border border-stone-200 rounded-lg text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                            Previous
+                          </button>
+                          <div className="flex items-center gap-1">
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                              <button
+                                key={page}
+                                onClick={() => setCurrentPage(page)}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                                  currentPage === page
+                                    ? 'bg-stone-900 text-white'
+                                    : 'text-stone-700 hover:bg-stone-100'
+                                }`}
+                              >
+                                {page}
+                              </button>
+                            ))}
+                          </div>
+                          <button
+                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                            disabled={currentPage === totalPages}
+                            className="px-3 py-1.5 border border-stone-200 rounded-lg text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1"
+                          >
+                            Next
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </>
           )}

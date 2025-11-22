@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase-browser';
 import { puckComponents } from './puck-components';
 import { createAiPlugin } from "@puckeditor/plugin-ai";
 import "@puckeditor/plugin-ai/styles.css";
+import { ImagePickerModal } from './ImagePickerModal';
 
 // Define your component blocks - now using imported components plus some basic blocks
 const config = {
@@ -302,6 +303,8 @@ export default function PuckEditor({ pageId, initialData, pageSlug }) {
   const [saveStatus, setSaveStatus] = useState('Saved');
   const [isLoading, setIsLoading] = useState(false);
   const saveTimeoutRef = useRef(null);
+  const [imagePickerOpen, setImagePickerOpen] = useState(false);
+  const [imagePickerCallback, setImagePickerCallback] = useState(null);
 
   // Load initial data from database if not provided or if it's empty
   useEffect(() => {
@@ -443,8 +446,31 @@ export default function PuckEditor({ pageId, initialData, pageSlug }) {
     }
   };
 
+  const handleImageSelect = (url) => {
+    if (imagePickerCallback) {
+      imagePickerCallback(url);
+      setImagePickerCallback(null);
+    }
+    setImagePickerOpen(false);
+  };
+
+  const openImagePicker = (callback) => {
+    setImagePickerCallback(() => callback);
+    setImagePickerOpen(true);
+  };
+
   return (
     <div className="w-full h-screen">
+      {/* Image Picker Modal */}
+      <ImagePickerModal
+        isOpen={imagePickerOpen}
+        onClose={() => {
+          setImagePickerOpen(false);
+          setImagePickerCallback(null);
+        }}
+        onSelect={handleImageSelect}
+      />
+
       {/* Puck Editor */}
       <Puck
         config={config}
@@ -468,6 +494,33 @@ export default function PuckEditor({ pageId, initialData, pageSlug }) {
               {children}
             </>
           ),
+          fieldTypes: {
+            text: ({ field, onChange, value, name }) => {
+              // Check if this is an image URL field
+              const isImageField = name === 'src' || field.label?.toLowerCase().includes('image') || field.label?.toLowerCase().includes('url');
+
+              return (
+                <div className="w-full">
+                  <input
+                    type="text"
+                    value={value || ''}
+                    onChange={(e) => onChange(e.target.value)}
+                    placeholder={field.label || name}
+                    className="w-full px-3 py-2 border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {isImageField && (
+                    <button
+                      type="button"
+                      onClick={() => openImagePicker((url) => onChange(url))}
+                      className="mt-2 w-full px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors cursor-pointer"
+                    >
+                      Choose from Library
+                    </button>
+                  )}
+                </div>
+              );
+            },
+          },
         }}
       />
     </div>

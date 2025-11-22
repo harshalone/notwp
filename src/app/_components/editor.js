@@ -32,6 +32,7 @@ import {
   useEditor,
 } from 'novel';
 import { createClient } from '@/lib/supabase-browser';
+import { uploadFile, getPublicUrl } from '@/lib/supabase-storage';
 import {
   Type,
   Heading1,
@@ -514,15 +515,37 @@ const defaultContent = {
   ],
 };
 
-// Simple image upload handler (placeholder - you can implement actual upload)
+// Image upload handler - uploads to Supabase storage
 const uploadFn = async (file) => {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      resolve(e.target.result);
-    };
-    reader.readAsDataURL(file);
-  });
+  try {
+    const supabase = createClient();
+
+    // Generate unique filename with timestamp
+    const timestamp = Date.now();
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${timestamp}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+    // Create a new file with the unique name
+    const newFile = new File([file], fileName, { type: file.type });
+
+    // Upload to root of media bucket
+    await uploadFile(supabase, newFile, '');
+
+    // Get public URL
+    const publicUrl = getPublicUrl(supabase, fileName);
+
+    return publicUrl;
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    // Fallback to base64 if upload fails
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        resolve(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
 };
 
 const createSuggestionItemsWithModals = (modalHandlers) => createSuggestionItems([

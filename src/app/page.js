@@ -1,5 +1,6 @@
 import Navigation from "./_components/landing/Navigation"
 import Hero from "./_components/landing/Hero"
+import CompactNewsletter from "./_components/landing/CompactNewsletter"
 import Video from "./_components/landing/Video"
 import Stats from "./_components/landing/Stats"
 import Features from "./_components/landing/Features"
@@ -28,6 +29,7 @@ export default function Home() {
     <main className="min-h-screen">
       <Navigation />
       <Hero />
+      <CompactNewsletter />
       <Video />
       <Stats />
       <Features />

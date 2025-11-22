@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, Upload, Image as ImageIcon, Search, Loader2, FolderOpen } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { X, Upload, Image as ImageIcon, Search, Loader2, Folder, ChevronRight, Home } from 'lucide-react';
 import { createClient } from '@/lib/supabase-browser';
-import { uploadFile, getPublicUrl, listFiles } from '@/lib/supabase-storage';
+import { listFiles, getPublicUrl } from '@/lib/supabase-storage';
 
-export function ImageModal({ isOpen, onClose, onInsert }) {
+export function ImagePickerModal({ isOpen, onClose, onSelect }) {
   const [activeTab, setActiveTab] = useState('upload');
   const [imageUrl, setImageUrl] = useState('');
   const [gifSearch, setGifSearch] = useState('');
@@ -14,8 +14,11 @@ export function ImageModal({ isOpen, onClose, onInsert }) {
   const [gifResults, setGifResults] = useState([]);
   const [loadingUnsplash, setLoadingUnsplash] = useState(false);
   const [loadingGifs, setLoadingGifs] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [mediaLibrary, setMediaLibrary] = useState([]);
+
+  // Media Library states
+  const [supabase] = useState(() => createClient());
+  const [mediaFiles, setMediaFiles] = useState([]);
+  const [currentPath, setCurrentPath] = useState('');
   const [loadingMedia, setLoadingMedia] = useState(false);
 
   // Search Unsplash
@@ -62,34 +65,18 @@ export function ImageModal({ isOpen, onClose, onInsert }) {
     }
   };
 
-  // Load Media Library
-  const loadMediaLibrary = async () => {
-    setLoadingMedia(true);
+  // Load media library files
+  const loadMediaFiles = useCallback(async () => {
     try {
-      const supabase = createClient();
-      const files = await listFiles(supabase, '');
-
-      // Filter only image files and add public URLs
-      const imageFiles = files
-        .filter(file => {
-          if (!file.name) return false;
-          const ext = file.name.split('.').pop()?.toLowerCase();
-          return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
-        })
-        .map(file => ({
-          ...file,
-          publicUrl: getPublicUrl(supabase, file.name)
-        }))
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort by newest first
-
-      setMediaLibrary(imageFiles);
+      setLoadingMedia(true);
+      const data = await listFiles(supabase, currentPath);
+      setMediaFiles(data);
     } catch (error) {
-      console.error('Error loading media library:', error);
-      setMediaLibrary([]);
+      console.error('Error loading media files:', error);
     } finally {
       setLoadingMedia(false);
     }
-  };
+  }, [supabase, currentPath]);
 
   // Debounced search for Unsplash
   useEffect(() => {
@@ -115,62 +102,37 @@ export function ImageModal({ isOpen, onClose, onInsert }) {
     return () => clearTimeout(timer);
   }, [gifSearch]);
 
-  // Load media library when modal opens or tab is selected
+  // Load media files when media tab is active
   useEffect(() => {
-    if (isOpen && activeTab === 'media') {
-      loadMediaLibrary();
+    if (activeTab === 'media' && isOpen) {
+      loadMediaFiles();
     }
-  }, [isOpen, activeTab]);
+  }, [activeTab, isOpen, loadMediaFiles]);
 
   if (!isOpen) return null;
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      setUploadingImage(true);
-      try {
-        const supabase = createClient();
-
-        // Generate unique filename with timestamp
-        const timestamp = Date.now();
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${timestamp}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-
-        // Create a new file with the unique name
-        const newFile = new File([file], fileName, { type: file.type });
-
-        // Upload to root of media bucket
-        await uploadFile(supabase, newFile, '');
-
-        // Get public URL
-        const publicUrl = getPublicUrl(supabase, fileName);
-
-        // Refresh media library if we're on that tab
-        if (activeTab === 'media') {
-          await loadMediaLibrary();
-        }
-
-        onInsert(publicUrl);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        onSelect(event.target.result);
         onClose();
-      } catch (error) {
-        console.error('Error uploading image:', error);
-        alert('Failed to upload image. Please try again.');
-      } finally {
-        setUploadingImage(false);
-      }
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   const handleUrlInsert = () => {
     if (imageUrl) {
-      onInsert(imageUrl);
+      onSelect(imageUrl);
       setImageUrl('');
       onClose();
     }
   };
 
   const handleUnsplashImageSelect = (photo) => {
-    onInsert(photo.urls.regular);
+    onSelect(photo.urls.regular);
     onClose();
     // Trigger download tracking as per Unsplash API guidelines
     if (photo.links?.download_location) {
@@ -183,21 +145,44 @@ export function ImageModal({ isOpen, onClose, onInsert }) {
   };
 
   const handleGifSelect = (gif) => {
-    onInsert(gif.media_formats?.gif?.url || gif.media_formats?.mediumgif?.url);
+    onSelect(gif.media_formats?.gif?.url || gif.media_formats?.mediumgif?.url);
     onClose();
   };
 
-  const handleMediaLibrarySelect = (image) => {
-    onInsert(image.publicUrl);
+  // Handle folder navigation in media library
+  const navigateToFolder = (folderName) => {
+    const newPath = currentPath ? `${currentPath}/${folderName}` : folderName;
+    setCurrentPath(newPath);
+  };
+
+  const navigateToPath = (index) => {
+    if (index === -1) {
+      setCurrentPath('');
+    } else {
+      const pathParts = currentPath.split('/');
+      setCurrentPath(pathParts.slice(0, index + 1).join('/'));
+    }
+  };
+
+  const handleMediaFileSelect = (file) => {
+    const filePath = currentPath ? `${currentPath}/${file.name}` : file.name;
+    const url = getPublicUrl(supabase, filePath);
+    onSelect(url);
     onClose();
   };
+
+  // Get breadcrumb path for media library
+  const pathParts = currentPath ? currentPath.split('/') : [];
+  const folders = mediaFiles.filter(f => f.id === null);
+  const regularFiles = mediaFiles.filter(f => f.id !== null && f.name !== '.placeholder');
+  const imageFiles = regularFiles.filter(f => f.metadata?.mimetype?.startsWith('image/'));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 cursor-pointer" onClick={onClose}>
       <div className="relative w-[1200px] h-[800px] bg-white rounded-xl shadow-2xl overflow-hidden cursor-default" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between px-8 py-6 border-b border-stone-200">
-          <h2 className="text-2xl font-semibold text-stone-900">Insert Image</h2>
+          <h2 className="text-2xl font-semibold text-stone-900">Select Image</h2>
           <button
             onClick={onClose}
             className="p-2 rounded-lg hover:bg-stone-100 transition-colors cursor-pointer"
@@ -227,7 +212,7 @@ export function ImageModal({ isOpen, onClose, onInsert }) {
                 : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
             }`}
           >
-            <FolderOpen className="w-5 h-5 inline-block mr-2" />
+            <ImageIcon className="w-5 h-5 inline-block mr-2" />
             Media Library
           </button>
           <button
@@ -261,24 +246,14 @@ export function ImageModal({ isOpen, onClose, onInsert }) {
               <div className="w-full max-w-2xl">
                 <label
                   htmlFor="file-upload"
-                  className={`flex flex-col items-center justify-center w-full h-96 border-2 border-dashed border-stone-300 rounded-lg ${uploadingImage ? 'cursor-not-allowed' : 'cursor-pointer'} bg-stone-50 hover:bg-stone-100 transition-colors`}
+                  className="flex flex-col items-center justify-center w-full h-96 border-2 border-dashed border-stone-300 rounded-lg cursor-pointer bg-stone-50 hover:bg-stone-100 transition-colors"
                 >
                   <div className="flex flex-col items-center justify-center pt-10 pb-12">
-                    {uploadingImage ? (
-                      <>
-                        <Loader2 className="w-20 h-20 mb-6 text-blue-600 animate-spin" />
-                        <p className="mb-4 text-lg text-stone-600 font-semibold">Uploading image...</p>
-                        <p className="text-base text-stone-500">Please wait</p>
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-20 h-20 mb-6 text-stone-400" />
-                        <p className="mb-4 text-lg text-stone-600">
-                          <span className="font-semibold">Click to upload</span> or drag and drop
-                        </p>
-                        <p className="text-base text-stone-500">PNG, JPG, GIF up to 10MB</p>
-                      </>
-                    )}
+                    <Upload className="w-20 h-20 mb-6 text-stone-400" />
+                    <p className="mb-4 text-lg text-stone-600">
+                      <span className="font-semibold">Click to upload</span> or drag and drop
+                    </p>
+                    <p className="text-base text-stone-500">PNG, JPG, GIF up to 10MB</p>
                   </div>
                   <input
                     id="file-upload"
@@ -286,7 +261,6 @@ export function ImageModal({ isOpen, onClose, onInsert }) {
                     className="hidden"
                     accept="image/*"
                     onChange={handleFileUpload}
-                    disabled={uploadingImage}
                   />
                 </label>
                 <div className="mt-8">
@@ -318,36 +292,82 @@ export function ImageModal({ isOpen, onClose, onInsert }) {
 
           {activeTab === 'media' && (
             <div className="flex flex-col h-full">
+              {/* Breadcrumb Navigation */}
+              <div className="bg-stone-50 rounded-lg border border-stone-200 px-4 py-3 mb-6">
+                <div className="flex items-center gap-2 text-sm">
+                  <button
+                    onClick={() => navigateToPath(-1)}
+                    className="flex items-center cursor-pointer gap-1 text-stone-600 hover:text-stone-900 transition-colors"
+                  >
+                    <Home className="w-4 h-4" />
+                    <span>Home</span>
+                  </button>
+                  {pathParts.map((part, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <ChevronRight className="w-4 h-4 text-stone-400" />
+                      <button
+                        onClick={() => navigateToPath(index)}
+                        className="text-stone-600 cursor-pointer hover:text-stone-900 transition-colors"
+                      >
+                        {part}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex-1 overflow-y-auto">
                 {loadingMedia ? (
                   <div className="flex items-center justify-center h-full">
                     <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
                   </div>
-                ) : mediaLibrary.length > 0 ? (
+                ) : folders.length === 0 && imageFiles.length === 0 ? (
+                  <div className="flex items-center justify-center h-full text-stone-500 text-lg">
+                    No images found in media library
+                  </div>
+                ) : (
                   <div className="grid grid-cols-3 gap-4">
-                    {mediaLibrary.map((image) => (
+                    {/* Folders */}
+                    {folders.map((folder) => (
                       <div
-                        key={image.id}
-                        onClick={() => handleMediaLibrarySelect(image)}
-                        className="relative aspect-square rounded-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all group"
+                        key={folder.name}
+                        onClick={() => navigateToFolder(folder.name)}
+                        className="relative aspect-square rounded-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all group border border-stone-200 bg-stone-50"
                       >
-                        <img
-                          src={image.publicUrl}
-                          alt={image.name}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <p className="text-white text-xs truncate">{image.name}</p>
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Folder className="w-16 h-16 text-stone-400" />
+                        </div>
+                        <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-stone-200 p-3">
+                          <p className="text-sm text-stone-900 text-center truncate font-medium">
+                            {folder.name}
+                          </p>
                         </div>
                       </div>
                     ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-stone-500">
-                    <FolderOpen className="w-16 h-16 mb-4 text-stone-300" />
-                    <p className="text-lg">No images in your media library</p>
-                    <p className="text-base mt-2">Upload images to see them here</p>
+
+                    {/* Images */}
+                    {imageFiles.map((file) => {
+                      const filePath = currentPath ? `${currentPath}/${file.name}` : file.name;
+                      const publicUrl = getPublicUrl(supabase, filePath);
+
+                      return (
+                        <div
+                          key={file.name}
+                          onClick={() => handleMediaFileSelect(file)}
+                          className="relative aspect-square rounded-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all group"
+                        >
+                          <img
+                            src={publicUrl}
+                            alt={file.name}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <p className="text-white text-xs truncate">{file.name}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -446,178 +466,6 @@ export function ImageModal({ isOpen, onClose, onInsert }) {
               </div>
             </div>
           )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export function YoutubeModal({ isOpen, onClose, onInsert }) {
-  const [videoUrl, setVideoUrl] = useState('');
-  const [error, setError] = useState('');
-
-  if (!isOpen) return null;
-
-  const handleInsert = () => {
-    const ytregex = new RegExp(
-      /^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$/
-    );
-
-    if (videoUrl && ytregex.test(videoUrl)) {
-      onInsert(videoUrl);
-      setVideoUrl('');
-      setError('');
-      onClose();
-    } else if (videoUrl) {
-      setError('Please enter a valid YouTube URL');
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 cursor-pointer" onClick={onClose}>
-      <div className="relative w-[1200px] h-[800px] bg-white rounded-xl shadow-2xl overflow-hidden cursor-default" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div className="flex items-center justify-between px-8 py-6 border-b border-stone-200">
-          <h2 className="text-2xl font-semibold text-stone-900">Embed YouTube Video</h2>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-stone-100 transition-colors cursor-pointer"
-          >
-            <X className="w-6 h-6 text-stone-500" />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="p-12 flex flex-col items-center justify-center h-[calc(800px-96px)]">
-          <div className="w-full max-w-2xl">
-            <div className="mb-12 text-center">
-              <div className="inline-flex items-center justify-center w-32 h-32 bg-red-100 rounded-full mb-8">
-                <svg className="w-16 h-16 text-red-600" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                </svg>
-              </div>
-              <p className="text-lg text-stone-600 mb-8">
-                Enter a YouTube video URL to embed it in your document
-              </p>
-            </div>
-
-            <div className="space-y-6">
-              <div>
-                <input
-                  type="text"
-                  placeholder="https://www.youtube.com/watch?v=..."
-                  value={videoUrl}
-                  onChange={(e) => {
-                    setVideoUrl(e.target.value);
-                    setError('');
-                  }}
-                  className={`w-full px-5 py-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base ${
-                    error ? 'border-red-500' : 'border-stone-300'
-                  }`}
-                  onKeyDown={(e) => e.key === 'Enter' && handleInsert()}
-                  autoFocus
-                />
-                {error && <p className="mt-3 text-base text-red-600">{error}</p>}
-              </div>
-
-              <button
-                onClick={handleInsert}
-                className="w-full px-5 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-base font-medium cursor-pointer"
-              >
-                Embed Video
-              </button>
-
-              <div className="text-base text-stone-500 text-center">
-                Supports youtube.com and youtu.be links
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export function TwitterModal({ isOpen, onClose, onInsert }) {
-  const [tweetUrl, setTweetUrl] = useState('');
-  const [error, setError] = useState('');
-
-  if (!isOpen) return null;
-
-  const handleInsert = () => {
-    const tweetRegex = new RegExp(
-      /^https?:\/\/(www\.)?(twitter\.com|x\.com)\/([a-zA-Z0-9_]{1,15})(\/status\/(\d+))?(\/\S*)?$/
-    );
-
-    if (tweetUrl && tweetRegex.test(tweetUrl)) {
-      onInsert(tweetUrl);
-      setTweetUrl('');
-      setError('');
-      onClose();
-    } else if (tweetUrl) {
-      setError('Please enter a valid Twitter/X URL');
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 cursor-pointer" onClick={onClose}>
-      <div className="relative w-[1200px] h-[800px] bg-white rounded-xl shadow-2xl overflow-hidden cursor-default" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div className="flex items-center justify-between px-8 py-6 border-b border-stone-200">
-          <h2 className="text-2xl font-semibold text-stone-900">Embed Tweet</h2>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-stone-100 transition-colors cursor-pointer"
-          >
-            <X className="w-6 h-6 text-stone-500" />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="p-12 flex flex-col items-center justify-center h-[calc(800px-96px)]">
-          <div className="w-full max-w-2xl">
-            <div className="mb-12 text-center">
-              <div className="inline-flex items-center justify-center w-32 h-32 bg-blue-100 rounded-full mb-8">
-                <svg className="w-16 h-16 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                </svg>
-              </div>
-              <p className="text-lg text-stone-600 mb-8">
-                Enter a Twitter/X post URL to embed it in your document
-              </p>
-            </div>
-
-            <div className="space-y-6">
-              <div>
-                <input
-                  type="text"
-                  placeholder="https://twitter.com/user/status/..."
-                  value={tweetUrl}
-                  onChange={(e) => {
-                    setTweetUrl(e.target.value);
-                    setError('');
-                  }}
-                  className={`w-full px-5 py-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base ${
-                    error ? 'border-red-500' : 'border-stone-300'
-                  }`}
-                  onKeyDown={(e) => e.key === 'Enter' && handleInsert()}
-                  autoFocus
-                />
-                {error && <p className="mt-3 text-base text-red-600">{error}</p>}
-              </div>
-
-              <button
-                onClick={handleInsert}
-                className="w-full px-5 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-base font-medium cursor-pointer"
-              >
-                Embed Tweet
-              </button>
-
-              <div className="text-base text-stone-500 text-center">
-                Supports both twitter.com and x.com links
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
