@@ -1,6 +1,7 @@
 import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 import Button from "./Button"
+import BookMeeting from "./BookMeeting"
 
 export default function Hero() {
   return (
@@ -26,9 +27,7 @@ export default function Hero() {
                 Get Started <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className="w-full sm:w-auto bg-transparent">
-              View Documentation
-            </Button>
+            <BookMeeting />
           </div>
 
           <p className="text-sm text-muted-foreground mt-6">Join 100K developers already using NotWP</p>

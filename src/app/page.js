@@ -19,6 +19,7 @@ import Pricing from "./_components/landing/Pricing"
 import Documentation from "./_components/landing/Documentation"
 import Support from "./_components/landing/Support"
 import FAQ from "./_components/landing/FAQ"
+import Newsletter from "./_components/landing/Newsletter"
 import CTA from "./_components/landing/CTA"
 import Footer from "./_components/landing/Footer"
 
@@ -46,6 +47,7 @@ export default function Home() {
       <Documentation />
       <Support />
       <FAQ />
+      <Newsletter />
       <CTA />
       <Footer />
     </main>

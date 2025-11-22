@@ -16,7 +16,8 @@ import {
   ChevronLeft,
   ChevronRight,
   User,
-  Mail
+  Mail,
+  BookOpen
 } from 'lucide-react';
 
 export default function AdminSidebar() {
@@ -31,6 +32,7 @@ export default function AdminSidebar() {
     { icon: Image, label: 'Media', href: '/dadmin/media' },
     { icon: Users, label: 'Users', href: '/dadmin/users' },
     { icon: Mail, label: 'Newsletter', href: '/dadmin/newsletter' },
+    { icon: BookOpen, label: 'Documentation', href: '/dadmin/documentation' },
     { icon: Package, label: 'Plugins', href: '/dadmin/plugins' },
     { icon: BarChart3, label: 'Analytics', href: '/dadmin/analytics' },
     { icon: Settings, label: 'Settings', href: '/dadmin/settings' },
