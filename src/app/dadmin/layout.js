@@ -10,13 +10,13 @@ function DadminContent({ children }) {
   const [showLoading, setShowLoading] = useState(true);
 
   useEffect(() => {
-    // Wait 4 seconds for SSR to verify auth
+    // Wait 3 seconds for SSR to verify auth
     const timer = setTimeout(() => {
       setShowLoading(false);
       if (!loading && !user) {
         router.push('/auth');
       }
-    }, 4000);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, [loading, user, router]);
@@ -25,7 +25,7 @@ function DadminContent({ children }) {
     return (
       <div className="fixed inset-0 backdrop-blur-md bg-white/30 flex items-center justify-center z-50">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+          <div className="w-12 h-12 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
           <p className="text-gray-700 font-medium">Verifying authentication...</p>
         </div>
       </div>

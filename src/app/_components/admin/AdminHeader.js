@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Search, Bell, User, LogOut, Settings, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
@@ -9,6 +9,23 @@ export default function AdminHeader() {
   const { account, signOut } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [appVersion, setAppVersion] = useState(null);
+
+  useEffect(() => {
+    const fetchAppVersion = async () => {
+      try {
+        const response = await fetch('/api/status');
+        const data = await response.json();
+        if (data.status === 'ok' && data.app_version) {
+          setAppVersion(data.app_version);
+        }
+      } catch (error) {
+        console.error('Error fetching app version:', error);
+      }
+    };
+
+    fetchAppVersion();
+  }, []);
 
   return (
     <header className="h-16 bg-white border-b border-stone-200 flex items-center justify-between px-6 fixed top-0 right-0 left-64 z-40">
@@ -26,6 +43,13 @@ export default function AdminHeader() {
 
       {/* Right Side Actions */}
       <div className="flex items-center gap-3">
+        {/* App Version */}
+        {appVersion && (
+          <div className="px-3 py-1 bg-stone-100 rounded-md">
+            <span className="text-xs font-medium text-stone-600">v{appVersion}</span>
+          </div>
+        )}
+
         {/* Help Button */}
         <button
           className="p-2 rounded-md hover:bg-stone-100 text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"

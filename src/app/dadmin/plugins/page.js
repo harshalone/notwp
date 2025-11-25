@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import AdminSidebar from "@/app/_components/admin/AdminSidebar";
 import AdminHeader from "@/app/_components/admin/AdminHeader";
 import {
@@ -9,154 +10,134 @@ import {
   MessagesSquare, CalendarDays, UsersRound, MessageCircle, Headphones, FileText
 } from 'lucide-react';
 
-const plugins = [
-  {
-    id: 1,
-    name: 'Cal.com',
-    description: 'Scheduling and booking tool for appointments',
-    icon: Calendar,
-    category: 'Productivity',
-    installed: true
-  },
-  {
-    id: 2,
-    name: 'Gmail Integration',
-    description: 'Connect and manage your Gmail account',
-    icon: Mail,
-    category: 'Communication',
-    installed: false
-  },
-  {
-    id: 3,
-    name: 'Email Marketing',
-    description: 'Create and send email campaigns',
-    icon: Send,
-    category: 'Marketing',
-    installed: true
-  },
-  {
-    id: 4,
-    name: 'Testimonial Tool',
-    description: 'Collect and display customer testimonials',
-    icon: MessageSquare,
-    category: 'Content',
-    installed: false
-  },
-  {
-    id: 5,
-    name: 'Newsletter',
-    description: 'Build and manage newsletter subscriptions',
-    icon: Newspaper,
-    category: 'Marketing',
-    installed: true
-  },
-  {
-    id: 6,
-    name: 'eCommerce Tool',
-    description: 'Add shopping cart and payment features',
-    icon: ShoppingCart,
-    category: 'Sales',
-    installed: false
-  },
-  {
-    id: 7,
-    name: 'Quiz Builder',
-    description: 'Create interactive quizzes and surveys',
-    icon: ClipboardList,
-    category: 'Engagement',
-    installed: false
-  },
-  {
-    id: 8,
-    name: 'Analytics Pro',
-    description: 'Advanced analytics and insights',
-    icon: BarChart3,
-    category: 'Analytics',
-    installed: true
-  },
-  {
-    id: 9,
-    name: 'SEO Optimizer',
-    description: 'Optimize your site for search engines',
-    icon: TrendingUp,
-    category: 'SEO',
-    installed: false
-  },
-  {
-    id: 10,
-    name: 'User Management',
-    description: 'Manage users and permissions',
-    icon: Users,
-    category: 'Admin',
-    installed: true
-  },
-  {
-    id: 11,
-    name: 'Automation Hub',
-    description: 'Automate workflows and tasks',
-    icon: Zap,
-    category: 'Productivity',
-    installed: false
-  },
-  {
-    id: 12,
-    name: 'Payment Gateway',
-    description: 'Accept payments securely',
-    icon: CreditCard,
-    category: 'Sales',
-    installed: false
-  },
-  {
-    id: 13,
-    name: 'Forum',
-    description: 'Create discussion forums for your community',
-    icon: MessagesSquare,
-    category: 'Community',
-    installed: false
-  },
-  {
-    id: 14,
-    name: 'Events',
-    description: 'Manage and promote events',
-    icon: CalendarDays,
-    category: 'Engagement',
-    installed: false
-  },
-  {
-    id: 15,
-    name: 'Communities',
-    description: 'Build and manage member communities',
-    icon: UsersRound,
-    category: 'Community',
-    installed: false
-  },
-  {
-    id: 16,
-    name: 'Live Chat',
-    description: 'Real-time chat with visitors',
-    icon: MessageCircle,
-    category: 'Communication',
-    installed: false
-  },
-  {
-    id: 17,
-    name: 'Customer Support',
-    description: 'Help desk and ticketing system',
-    icon: Headphones,
-    category: 'Support',
-    installed: false
-  },
-  {
-    id: 18,
-    name: 'Contact Us',
-    description: 'Contact form builder and manager',
-    icon: FileText,
-    category: 'Communication',
-    installed: false
-  }
-];
+// Icon mapping
+const iconMap = {
+  Calendar,
+  Mail,
+  Send,
+  MessageSquare,
+  ShoppingCart,
+  ClipboardList,
+  Newspaper,
+  TrendingUp,
+  Users,
+  Zap,
+  CreditCard,
+  BarChart3,
+  MessagesSquare,
+  CalendarDays,
+  UsersRound,
+  MessageCircle,
+  Headphones,
+  FileText
+};
 
 export default function PluginsPage() {
+  const [plugins, setPlugins] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchPlugins();
+  }, []);
+
+  const fetchPlugins = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/plugins');
+      const data = await response.json();
+
+      if (data.success) {
+        // Map icon strings to actual icon components
+        const pluginsWithIcons = data.plugins.map(plugin => ({
+          ...plugin,
+          iconComponent: iconMap[plugin.icon] || FileText
+        }));
+        setPlugins(pluginsWithIcons);
+      } else {
+        setError(data.error || 'Failed to fetch plugins');
+      }
+    } catch (err) {
+      console.error('Error fetching plugins:', err);
+      setError('Failed to load plugins');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleInstall = async (pluginId, currentStatus) => {
+    try {
+      const response = await fetch('/api/plugins', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: pluginId,
+          installed: !currentStatus
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update local state
+        setPlugins(plugins.map(plugin =>
+          plugin.id === pluginId
+            ? { ...plugin, installed: !currentStatus }
+            : plugin
+        ));
+      } else {
+        alert(data.error || 'Failed to update plugin');
+      }
+    } catch (err) {
+      console.error('Error updating plugin:', err);
+      alert('Failed to update plugin');
+    }
+  };
+  if (loading) {
+    return (
+      <div className="flex min-h-screen bg-stone-50">
+        <AdminSidebar />
+        <div className="flex-1 ml-64">
+          <AdminHeader />
+          <main className="pt-20 px-8 pb-8">
+            <div className="flex items-center justify-center h-96">
+              <div className="text-center">
+                <div className="w-8 h-8 border-4 border-stone-200 border-t-stone-900 rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-stone-600">Loading plugins...</p>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen bg-stone-50">
+        <AdminSidebar />
+        <div className="flex-1 ml-64">
+          <AdminHeader />
+          <main className="pt-20 px-8 pb-8">
+            <div className="flex items-center justify-center h-96">
+              <div className="text-center">
+                <p className="text-red-600 mb-4">{error}</p>
+                <button
+                  onClick={fetchPlugins}
+                  className="px-4 py-2 bg-stone-900 text-white rounded-lg hover:bg-stone-800 transition-colors"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-stone-50">
       <AdminSidebar />
@@ -197,7 +178,7 @@ export default function PluginsPage() {
           {/* Plugin Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
             {plugins.map((plugin) => {
-              const IconComponent = plugin.icon;
+              const IconComponent = plugin.iconComponent;
               return (
                 <div
                   key={plugin.id}
@@ -219,12 +200,18 @@ export default function PluginsPage() {
                       </span>
                     </div>
                     {plugin.installed ? (
-                      <button className="cursor-pointer w-full flex items-center justify-center gap-2 px-4 py-2 bg-stone-900 text-white rounded-lg hover:bg-stone-800 transition-colors">
+                      <button
+                        onClick={() => handleToggleInstall(plugin.id, plugin.installed)}
+                        className="cursor-pointer w-full flex items-center justify-center gap-2 px-4 py-2 bg-stone-900 text-white rounded-lg hover:bg-stone-800 transition-colors"
+                      >
                         <Settings className="w-4 h-4" />
                         Installed
                       </button>
                     ) : (
-                      <button className="cursor-pointer w-full flex items-center justify-center gap-2 px-4 py-2 border border-stone-900 text-stone-900 rounded-lg hover:bg-stone-900 hover:text-white transition-colors">
+                      <button
+                        onClick={() => handleToggleInstall(plugin.id, plugin.installed)}
+                        className="cursor-pointer w-full flex items-center justify-center gap-2 px-4 py-2 border border-stone-900 text-stone-900 rounded-lg hover:bg-stone-900 hover:text-white transition-colors"
+                      >
                         <Plus className="w-4 h-4" />
                         Install
                       </button>
