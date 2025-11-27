@@ -3,34 +3,33 @@ import { createClient } from '@/lib/supabase-server';
 
 /**
  * API Route: GET /api/plugins
- * Fetches all plugins (public access)
+ * Fetches all plugins from notwp.com
  */
 export async function GET(request) {
   try {
-    const supabase = await createClient();
+    // Fetch plugin data from external API
+    const response = await fetch('https://www.notwp.com/api/plugins', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store', // Disable caching to always get fresh data
+    });
 
-    // Fetch all plugins
-    const { data: plugins, error: fetchError } = await supabase
-      .from('nwp_plugins')
-      .select('*')
-      .order('id', { ascending: true });
-
-    if (fetchError) {
-      console.error('Error fetching plugins:', fetchError);
-      return NextResponse.json(
-        { error: 'Failed to fetch plugins: ' + fetchError.message },
-        { status: 500 }
-      );
+    if (!response.ok) {
+      throw new Error(`Failed to fetch plugins: ${response.status} ${response.statusText}`);
     }
+
+    const data = await response.json();
 
     return NextResponse.json({
       success: true,
-      plugins: plugins || [],
+      plugins: data.plugins || data,
     });
   } catch (error) {
     console.error('Error in plugins API:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', message: error.message },
       { status: 500 }
     );
   }

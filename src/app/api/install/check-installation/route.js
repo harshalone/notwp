@@ -15,35 +15,28 @@ export async function GET(request) {
       });
     }
 
-    // Try to connect and check if app_settings table exists
+    // Try to connect and check if nwp_accounts table exists
     try {
       const { createClient } = await import('@supabase/supabase-js');
       const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-      // Try to query the app_settings table
-      const { data, error } = await supabase
-        .from('nwp_app_settings')
-        .select('setting_value')
-        .eq('setting_key', 'installation_complete')
-        .maybeSingle();
+      // Try to query the nwp_accounts table to check if it exists
+      // This is the core table that indicates installation is complete
+      const { error } = await supabase
+        .from('nwp_accounts')
+        .select('id')
+        .limit(1);
 
       if (error) {
-        // Table doesn't exist or other error
+        // Table doesn't exist or other error - installation needed
         return NextResponse.json({
           installed: false,
-          reason: 'Database not configured',
+          reason: 'Database tables not found',
         });
       }
 
-      // Check if installation is marked as complete
-      if (data?.setting_value === 'true') {
-        return NextResponse.json({ installed: true });
-      }
-
-      return NextResponse.json({
-        installed: false,
-        reason: 'Installation not complete',
-      });
+      // If we can query nwp_accounts, installation is complete
+      return NextResponse.json({ installed: true });
     } catch (dbError) {
       return NextResponse.json({
         installed: false,

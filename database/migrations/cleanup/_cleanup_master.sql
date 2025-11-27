@@ -165,10 +165,18 @@ EXCEPTION WHEN OTHERS THEN
     RAISE NOTICE 'Function set_published_at() does not exist or already dropped';
 END $$;
 
+DO $$
+BEGIN
+    EXECUTE 'DROP FUNCTION IF EXISTS public.is_admin(UUID) CASCADE';
+    RAISE NOTICE 'Dropped function: is_admin(UUID)';
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Function is_admin(UUID) does not exist or already dropped';
+END $$;
+
 -- ============================================
 -- STEP 5: DROP ALL FUNCTIONS DYNAMICALLY
 -- ============================================
--- Drop all functions that contain 'user', 'update', 'exec_sql', 'handle', or 'published'
+-- Drop all functions that contain 'user', 'update', 'exec_sql', 'handle', 'published', or 'admin'
 DO $$
 DECLARE
     func_record RECORD;
@@ -184,6 +192,7 @@ BEGIN
             OR p.proname ILIKE '%exec_sql%'
             OR p.proname ILIKE '%handle%'
             OR p.proname ILIKE '%published%'
+            OR p.proname ILIKE '%admin%'
         )
     LOOP
         BEGIN
@@ -274,8 +283,75 @@ BEGIN
     END LOOP;
 END $$;
 
+-- Drop all policies on storage.objects for media bucket
+DO $$
+DECLARE
+    pol RECORD;
+BEGIN
+    FOR pol IN
+        SELECT schemaname, tablename, policyname
+        FROM pg_policies
+        WHERE schemaname = 'storage'
+        AND tablename = 'objects'
+        AND policyname ILIKE '%media%'
+    LOOP
+        BEGIN
+            EXECUTE format('DROP POLICY IF EXISTS %I ON %I.%I',
+                pol.policyname, pol.schemaname, pol.tablename);
+            RAISE NOTICE 'Dropped storage policy: % on %.%', pol.policyname, pol.schemaname, pol.tablename;
+        EXCEPTION WHEN OTHERS THEN
+            RAISE NOTICE 'Could not drop storage policy %: %', pol.policyname, SQLERRM;
+        END;
+    END LOOP;
+END $$;
+
 -- ============================================
--- STEP 9: REVOKE PERMISSIONS
+-- STEP 9: DROP STORAGE UTILITY FUNCTIONS
+-- ============================================
+-- Drop media storage utility functions
+DO $$
+BEGIN
+    EXECUTE 'DROP FUNCTION IF EXISTS public.get_media_storage_stats() CASCADE';
+    RAISE NOTICE 'Dropped function: get_media_storage_stats()';
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Function get_media_storage_stats() does not exist or already dropped';
+END $$;
+
+DO $$
+BEGIN
+    EXECUTE 'DROP FUNCTION IF EXISTS public.cleanup_orphaned_media_files() CASCADE';
+    RAISE NOTICE 'Dropped function: cleanup_orphaned_media_files()';
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Function cleanup_orphaned_media_files() does not exist or already dropped';
+END $$;
+
+-- ============================================
+-- STEP 10: DELETE MEDIA BUCKET
+-- ============================================
+-- Delete all objects from media bucket first
+DO $$
+DECLARE
+    obj_count INTEGER;
+BEGIN
+    -- Delete all objects in the media bucket
+    DELETE FROM storage.objects WHERE bucket_id = 'media';
+    GET DIAGNOSTICS obj_count = ROW_COUNT;
+    RAISE NOTICE 'Deleted % objects from media bucket', obj_count;
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Could not delete objects from media bucket: %', SQLERRM;
+END $$;
+
+-- Delete the media bucket
+DO $$
+BEGIN
+    DELETE FROM storage.buckets WHERE id = 'media';
+    RAISE NOTICE 'Deleted media storage bucket';
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Could not delete media bucket: %', SQLERRM;
+END $$;
+
+-- ============================================
+-- STEP 11: REVOKE PERMISSIONS
 -- ============================================
 -- Revoke any granted permissions (cleanup)
 DO $$
@@ -303,7 +379,42 @@ BEGIN
 END $$;
 
 -- ============================================
--- STEP 10: RE-ENABLE TRIGGERS
+-- STEP 12: DELETE USERS FROM AUTH.USERS AND AUTH.IDENTITIES
+-- ============================================
+-- Delete all users that were created during installation
+-- This removes users from Supabase auth system
+
+-- STEP 12a: Clean up auth.identities first
+-- This fixes the "User not found" error when creating users
+DO $$
+DECLARE
+    identity_count INTEGER;
+BEGIN
+    -- Delete all identities from auth.identities
+    -- This table stores provider-specific identity information (email, oauth, etc.)
+    DELETE FROM auth.identities;
+    GET DIAGNOSTICS identity_count = ROW_COUNT;
+    RAISE NOTICE 'Deleted % identities from auth.identities table', identity_count;
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Could not delete identities from auth.identities: %', SQLERRM;
+END $$;
+
+-- STEP 12b: Clean up auth.users
+DO $$
+DECLARE
+    user_count INTEGER;
+BEGIN
+    -- Delete all users from auth.users
+    -- This will cascade delete related auth data (sessions, refresh tokens, etc.)
+    DELETE FROM auth.users;
+    GET DIAGNOSTICS user_count = ROW_COUNT;
+    RAISE NOTICE 'Deleted % users from auth.users table', user_count;
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Could not delete users from auth.users: %', SQLERRM;
+END $$;
+
+-- ============================================
+-- STEP 13: RE-ENABLE TRIGGERS
 -- ============================================
 SET session_replication_role = DEFAULT;
 
@@ -317,12 +428,18 @@ BEGIN
     RAISE NOTICE '==============================================';
     RAISE NOTICE 'All NotWordPress objects have been removed:';
     RAISE NOTICE '  - Triggers (specific and dynamic)';
-    RAISE NOTICE '  - Functions (including exec_sql)';
+    RAISE NOTICE '  - Functions (including exec_sql and storage utilities)';
     RAISE NOTICE '  - Tables (all nwp_* tables)';
-    RAISE NOTICE '  - Policies';
+    RAISE NOTICE '  - Policies (including storage policies)';
+    RAISE NOTICE '  - Storage bucket (media) and all objects';
     RAISE NOTICE '  - Permissions';
+    RAISE NOTICE '  - Auth users (all users from auth.users table)';
+    RAISE NOTICE '  - Auth identities (all identities from auth.identities table)';
     RAISE NOTICE '';
     RAISE NOTICE 'Database is now clean and ready for fresh migrations.';
     RAISE NOTICE 'You can now run your other migration files from scratch.';
+    RAISE NOTICE '==============================================';
+    RAISE NOTICE 'WARNING: All authentication users and identities have been deleted!';
+    RAISE NOTICE 'You will need to create new admin users during installation.';
     RAISE NOTICE '==============================================';
 END $$;

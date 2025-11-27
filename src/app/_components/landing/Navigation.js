@@ -30,7 +30,7 @@ export default function Navigation() {
             </Link>
             <Link href="/editor">
               <Button variant="default" size="sm">
-                Get Started
+                Editor
               </Button>
             </Link>
           </div>

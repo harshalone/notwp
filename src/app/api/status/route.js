@@ -1,51 +1,32 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 
 export async function GET() {
   try {
-    // Get Supabase credentials from environment
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    // Fetch latest version from notwp.com
+    const versionResponse = await fetch('https://www.notwp.com/api/status', {
+      cache: 'no-store',
+    });
 
-    if (!supabaseUrl || !supabaseAnonKey) {
+    if (!versionResponse.ok) {
       return NextResponse.json(
         {
           status: 'error',
-          message: 'Database configuration missing',
+          message: 'Failed to fetch version from remote',
           server_status: 'running',
-          app_version: null,
+          latest_version: null,
         },
         { status: 500 }
       );
     }
 
-    // Create Supabase client
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const versionData = await versionResponse.json();
+    const latestVersion = versionData.version || null;
 
-    // Query the app_version from nwp_app_settings table
-    const { data, error } = await supabase
-      .from('nwp_app_settings')
-      .select('setting_value')
-      .eq('setting_key', 'app_version')
-      .maybeSingle();
-
-    if (error) {
-      return NextResponse.json(
-        {
-          status: 'error',
-          message: error.message,
-          server_status: 'running',
-          app_version: null,
-        },
-        { status: 500 }
-      );
-    }
-
-    // Return success response with server status and app version
     return NextResponse.json({
-      status: 'ok',
-      server_status: 'running',
-      app_version: data?.setting_value || 'unknown',
+      status: versionData.status,
+      server_status: versionData.server_status,
+      app_version: versionData.app_version,
+      latest_version: versionData.app_version,
     });
   } catch (error) {
     return NextResponse.json(
@@ -53,7 +34,7 @@ export async function GET() {
         status: 'error',
         message: error instanceof Error ? error.message : 'Unknown error',
         server_status: 'running',
-        app_version: null,
+        latest_version: null,
       },
       { status: 500 }
     );

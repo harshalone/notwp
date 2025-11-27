@@ -1,4 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# NotWordPress - Open Source CMS
+
+This is a [Next.js](https://nextjs.org) based CMS project with Supabase backend.
+
+## Installation
+
+Follow the installation wizard at `/install` after setting up your development environment.
+
+### Database Setup
+
+The database migrations will automatically create:
+- All required tables (`nwp_accounts`, `nwp_posts`, `nwp_pages`, etc.)
+- Row Level Security (RLS) policies
+- Storage buckets for media
+- **A default administrator account**
+
+### Default Administrator Credentials
+
+After running the database migrations in Step 3 of the installation, a default admin account is created:
+
+- **Email:** `admin@notwp.com`
+- **Password:** `admin`
+
+**⚠️ IMPORTANT SECURITY NOTICE:**
+These are default credentials for initial setup only. You **must** change the password immediately after your first login.
+
+### Changing Your Password
+
+1. Log in to the admin panel at `/dadmin/auth/login` using the default credentials
+2. Navigate to **Settings** in the admin panel
+3. Update your email address and password
+4. Configure your profile information (display name, bio, avatar, etc.)
+
+Alternatively, you can use Supabase Auth dashboard to manage user accounts and reset passwords.
 
 ## Getting Started
 

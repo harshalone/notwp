@@ -11,21 +11,31 @@ export const metadata = {
 export const revalidate = 60; // Revalidate every 60 seconds
 
 async function getPosts() {
-  const supabase = await createClient();
+  try {
+    const supabase = await createClient();
 
-  const { data: posts, error } = await supabase
-    .from('nwp_posts')
-    .select('*')
-    .eq('post_status', 'published')
-    .eq('post_type', 'post')
-    .order('published_at', { ascending: false });
+    // Check if Supabase is configured
+    if (!supabase) {
+      return { error: 'not_configured', posts: [] };
+    }
 
-  if (error) {
-    console.error('Error fetching posts:', error);
-    return [];
+    const { data: posts, error } = await supabase
+      .from('nwp_posts')
+      .select('*')
+      .eq('post_status', 'published')
+      .eq('post_type', 'post')
+      .order('published_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching posts:', error);
+      return { error: 'connection_error', posts: [] };
+    }
+
+    return { posts: posts || [], error: null };
+  } catch (error) {
+    console.error('Supabase connection error:', error);
+    return { error: 'not_configured', posts: [] };
   }
-
-  return posts || [];
 }
 
 function formatDate(dateString) {
@@ -39,7 +49,7 @@ function formatDate(dateString) {
 }
 
 export default async function BlogPage() {
-  const posts = await getPosts();
+  const { posts, error } = await getPosts();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -53,8 +63,50 @@ export default async function BlogPage() {
           </p>
         </div>
 
-        {/* Posts Grid */}
-        {posts.length === 0 ? (
+        {/* Error Message for Missing Supabase Configuration */}
+        {error === 'not_configured' ? (
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
+              <div className="mb-4">
+                <svg className="w-16 h-16 mx-auto text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-3">
+                Database Connection Required
+              </h2>
+              <p className="text-gray-700 mb-4">
+                To display blog posts, you need to configure your Supabase database connection.
+              </p>
+              <div className="bg-white rounded-md p-4 text-left">
+                <p className="text-sm font-medium text-gray-900 mb-2">Quick Setup:</p>
+                <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
+                  <li>Create a Supabase project at <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">supabase.com</a></li>
+                  <li>Copy your project URL and anon key</li>
+                  <li>Add them to your <code className="bg-gray-100 px-2 py-1 rounded text-xs">.env.local</code> file</li>
+                  <li>Restart your development server</li>
+                </ol>
+              </div>
+              <div className="mt-6">
+                <Link
+                  href="https://www.notwp.com/docs"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  View Documentation
+                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              </div>
+            </div>
+          </div>
+        ) : error === 'connection_error' ? (
+          <div className="text-center py-12">
+            <p className="text-red-500 text-lg">Unable to connect to the database. Please check your configuration.</p>
+          </div>
+        ) : posts.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500 text-lg">No posts published yet.</p>
           </div>

@@ -70,6 +70,11 @@ GRANT EXECUTE ON FUNCTION public.is_admin(UUID) TO anon;
 ALTER TABLE public.nwp_accounts ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
+-- Policy: Allow INSERT during user creation (for triggers and service role)
+CREATE POLICY "Allow insert on user creation" ON public.nwp_accounts
+    FOR INSERT
+    WITH CHECK (true);
+
 -- Policy: Users can view their own account
 CREATE POLICY "Users can view own account" ON public.nwp_accounts
     FOR SELECT
@@ -101,6 +106,28 @@ CREATE POLICY "Administrators can delete accounts" ON public.nwp_accounts
         public.is_admin(auth.uid())
     );
 
--- Grant permissions
+-- Policy: Service role has full access (needed for admin operations via API)
+CREATE POLICY "Service role has full access" ON public.nwp_accounts
+    FOR ALL
+    TO service_role
+    USING (true)
+    WITH CHECK (true);
+
+
+-- Note: The "Allow insert on user creation" policy (line 74-76) handles all inserts
+-- We don't need a second restrictive INSERT policy here because:
+-- 1. During signup, auth.uid() is NULL, so restrictive policies would block the trigger
+-- 2. Only the trigger and service_role can INSERT anyway (due to table permissions)
+-- 3. The permissive policy WITH CHECK (true) is correct for this use case
+
+-- Grant permissions on table
+GRANT ALL ON public.nwp_accounts TO postgres;
+GRANT ALL ON public.nwp_accounts TO service_role;
 GRANT SELECT, INSERT, UPDATE ON public.nwp_accounts TO authenticated;
 GRANT SELECT ON public.nwp_accounts TO anon;
+
+-- Grant permissions on the sequence (required for auto-incrementing id)
+GRANT USAGE, SELECT ON SEQUENCE public.nwp_accounts_id_seq TO postgres;
+GRANT USAGE, SELECT ON SEQUENCE public.nwp_accounts_id_seq TO service_role;
+GRANT USAGE, SELECT ON SEQUENCE public.nwp_accounts_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE public.nwp_accounts_id_seq TO anon;

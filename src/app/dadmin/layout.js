@@ -1,25 +1,40 @@
 'use client';
 
 import { AuthProvider, useAuth } from '@/lib/auth-context';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 function DadminContent({ children }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [showLoading, setShowLoading] = useState(true);
 
+  // Check if current path is an auth route
+  const isAuthRoute = pathname?.startsWith('/dadmin/auth');
+
   useEffect(() => {
+    // Skip auth check for auth routes
+    if (isAuthRoute) {
+      setShowLoading(false);
+      return;
+    }
+
     // Wait 3 seconds for SSR to verify auth
     const timer = setTimeout(() => {
       setShowLoading(false);
       if (!loading && !user) {
-        router.push('/auth');
+        router.push('/dadmin/auth/login');
       }
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [loading, user, router]);
+  }, [loading, user, router, isAuthRoute]);
+
+  // For auth routes, render immediately without auth check
+  if (isAuthRoute) {
+    return <>{children}</>;
+  }
 
   if (showLoading) {
     return (

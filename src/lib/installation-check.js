@@ -1,13 +1,9 @@
 /**
- * Check if the application has been installed
- * This runs on the client side
+ * Check if the application has been installed by querying the database
+ * This checks if the nwp_accounts table exists
  */
-export async function checkInstallation() {
+export async function checkInstallation(supabaseUrl, supabaseAnonKey) {
   try {
-    // Get credentials from localStorage
-    const supabaseUrl = localStorage.getItem('nwp_supabase_url');
-    const supabaseAnonKey = localStorage.getItem('nwp_supabase_anon_key');
-
     if (!supabaseUrl || !supabaseAnonKey) {
       return false;
     }
@@ -17,47 +13,9 @@ export async function checkInstallation() {
     );
     const data = await response.json();
 
-    // Update cache based on result
-    if (data.installed) {
-      setCachedInstallationStatus(true);
-      return true;
-    } else {
-      setCachedInstallationStatus(false);
-      return false;
-    }
+    return data.installed;
   } catch (error) {
     console.error('Error checking installation:', error);
     return false;
   }
-}
-
-/**
- * Check installation status from localStorage cache
- * This provides immediate feedback without API calls
- */
-export function getCachedInstallationStatus() {
-  if (typeof window === 'undefined') return null;
-
-  const cached = localStorage.getItem('nwp_installation_complete');
-  if (cached === null) return null;
-
-  return cached === 'true';
-}
-
-/**
- * Update cached installation status
- */
-export function setCachedInstallationStatus(installed) {
-  if (typeof window === 'undefined') return;
-
-  localStorage.setItem('nwp_installation_complete', installed.toString());
-}
-
-/**
- * Clear cached installation status
- */
-export function clearCachedInstallationStatus() {
-  if (typeof window === 'undefined') return;
-
-  localStorage.removeItem('nwp_installation_complete');
 }

@@ -8,7 +8,9 @@ const steps = [
   { number: 1, title: 'Supabase Credentials', description: 'Connect your database' },
   { number: 2, title: 'Review Setup', description: 'Preview migrations' },
   { number: 3, title: 'Install Database', description: 'Run migrations' },
-  { number: 4, title: 'Complete', description: 'Start using NotWordPress' },
+  { number: 4, title: 'Storage Bucket', description: 'Setup media storage' },
+  { number: 5, title: 'Create Admin', description: 'Setup administrator account' },
+  { number: 6, title: 'Complete', description: 'Start using NotWP' },
 ];
 
 export default function OnboardingLayout({ children }) {
@@ -27,7 +29,7 @@ export default function OnboardingLayout({ children }) {
 
   return (
     <div className="min-h-screen bg-stone-50">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="px-4 py-8 sm:px-6 lg:px-8">
         {/* Progress Steps */}
         <nav aria-label="Progress" className="mb-8">
           <ol className="flex items-center justify-between">

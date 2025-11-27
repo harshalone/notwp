@@ -1,43 +1,70 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, Database, Shield, Zap, ArrowRight, Loader2, Copy, Check, CloudUpload, RefreshCw, X } from 'lucide-react';
-import { setCachedInstallationStatus } from '@/lib/installation-check';
-import { createClient } from '@supabase/supabase-js';
+import {
+  ImageIcon,
+  CheckCircle2,
+  ArrowRight,
+  ArrowLeft,
+  Copy,
+  Check,
+  FolderOpen,
+  Code,
+  ExternalLink,
+} from 'lucide-react';
 
 export default function Step4Page() {
   const router = useRouter();
-  const [isVerifying, setIsVerifying] = useState(false);
   const [credentials, setCredentials] = useState(null);
   const [copiedField, setCopiedField] = useState(null);
-  const [showRestartModal, setShowRestartModal] = useState(false);
-  const [envFileContent, setEnvFileContent] = useState('');
+  const [bucketCreated, setBucketCreated] = useState(false);
+  const [policiesApplied, setPoliciesApplied] = useState(false);
 
   useEffect(() => {
-    // Get credentials from session storage
+    // Check if we have credentials
     const credentialsStr = sessionStorage.getItem('supabaseCredentials');
-    if (credentialsStr) {
-      try {
-        const creds = JSON.parse(credentialsStr);
-        setCredentials(creds);
-        // Save to localStorage for future use (only anon key for regular use)
-        localStorage.setItem('nwp_supabase_url', creds.supabaseUrl);
-        localStorage.setItem('nwp_supabase_anon_key', creds.supabaseAnonKey);
-        // Temporarily store service role key for verification
-        sessionStorage.setItem('nwp_service_role_key_temp', creds.supabaseServiceRoleKey);
-
-        // Generate .env file content
-        const envContent = `# Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=${creds.supabaseUrl}
-NEXT_PUBLIC_SUPABASE_ANON_KEY=${creds.supabaseAnonKey}
-SUPABASE_SERVICE_ROLE_KEY=${creds.supabaseServiceRoleKey}`;
-        setEnvFileContent(envContent);
-      } catch (error) {
-        console.error('Error saving credentials:', error);
-      }
+    if (!credentialsStr) {
+      router.push('/install/step-1');
+      return;
     }
-  }, []);
+
+    try {
+      const creds = JSON.parse(credentialsStr);
+      setCredentials(creds);
+    } catch (error) {
+      console.error('Error parsing credentials:', error);
+      router.push('/install/step-1');
+    }
+  }, [router]);
+
+  const storagePolicySQL = `-- Storage Policies for media bucket
+-- Note: These policies allow authenticated users to manage media files
+
+-- Policy: Authenticated users can read all files in media bucket
+CREATE POLICY "Authenticated users can read media files"
+ON storage.objects FOR SELECT
+TO authenticated
+USING (bucket_id = 'media');
+
+-- Policy: Authenticated users can upload files to media bucket
+CREATE POLICY "Authenticated users can upload media files"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id = 'media');
+
+-- Policy: Authenticated users can update their own files
+CREATE POLICY "Authenticated users can update media files"
+ON storage.objects FOR UPDATE
+TO authenticated
+USING (bucket_id = 'media')
+WITH CHECK (bucket_id = 'media');
+
+-- Policy: Authenticated users can delete files
+CREATE POLICY "Authenticated users can delete media files"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (bucket_id = 'media');`;
 
   const copyToClipboard = async (text, field) => {
     try {
@@ -49,447 +76,227 @@ SUPABASE_SERVICE_ROLE_KEY=${creds.supabaseServiceRoleKey}`;
     }
   };
 
-  const handleGetStarted = async () => {
-    setIsVerifying(true);
-
-    try {
-      // Get credentials from localStorage and sessionStorage
-      const supabaseUrl = localStorage.getItem('nwp_supabase_url');
-      const serviceRoleKey = sessionStorage.getItem('nwp_service_role_key_temp');
-
-      if (!supabaseUrl || !serviceRoleKey) {
-        alert('Credentials not found. Please restart the installation.');
-        router.push('/install/step-1');
-        return;
-      }
-
-      // Verify installation using service role key (bypasses RLS)
-      const supabase = createClient(supabaseUrl, serviceRoleKey);
-
-      // Check that all tables exist
-      const [accountsCheck, postsCheck, settingsCheck] = await Promise.all([
-        supabase.from('nwp_accounts').select('id').limit(1),
-        supabase.from('nwp_posts').select('id').limit(1),
-        supabase.from('nwp_app_settings').select('setting_value').eq('setting_key', 'installation_complete').maybeSingle()
-      ]);
-
-      // Check for any errors (except "no rows" which is fine)
-      if (accountsCheck.error && !accountsCheck.error.message.includes('0 rows')) {
-        console.error('Accounts table verification failed:', accountsCheck.error);
-        throw new Error('nwp_accounts table not found');
-      }
-
-      if (postsCheck.error && !postsCheck.error.message.includes('0 rows')) {
-        console.error('Posts table verification failed:', postsCheck.error);
-        throw new Error('nwp_posts table not found');
-      }
-
-      if (settingsCheck.error) {
-        console.error('Settings table verification failed:', settingsCheck.error);
-        throw new Error('nwp_app_settings table not found');
-      }
-
-      // Now mark installation as complete in the database
-      const completeResponse = await fetch('/api/install/complete-installation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supabaseUrl,
-          supabaseServiceRoleKey: serviceRoleKey
-        })
-      });
-
-      if (!completeResponse.ok) {
-        const errorData = await completeResponse.json();
-        throw new Error(errorData.error || 'Failed to mark installation as complete');
-      }
-
-      // Mark installation as complete in cache
-      setCachedInstallationStatus(true);
-
-      // Show the restart modal
-      setIsVerifying(false);
-      setShowRestartModal(true);
-    } catch (error) {
-      console.error('Verification error:', error);
-      alert(`Installation verification failed: ${error.message}. Please check your Supabase SQL editor and ensure all migrations ran successfully.`);
-      setIsVerifying(false);
+  const handleContinue = () => {
+    if (bucketCreated && policiesApplied) {
+      router.push('/install/step-5');
     }
   };
 
-  const handleContinueAfterRestart = () => {
-    // Clear temporary credentials
-    sessionStorage.removeItem('nwp_service_role_key_temp');
-    sessionStorage.removeItem('supabaseCredentials');
-
-    // Redirect to home page
-    router.push('/');
+  const handleBack = () => {
+    router.push('/install/step-3');
   };
 
-  return (
-    <div className="mx-auto max-w-2xl">
-      <div className="rounded-lg border border-stone-200 bg-white p-8 shadow-sm">
-        {/* Success Icon */}
-        <div className="mb-6 flex justify-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-            <CheckCircle2 className="h-10 w-10 text-green-600" />
-          </div>
-        </div>
+  if (!credentials) {
+    return null;
+  }
 
+  return (
+    <div className="mx-auto max-w-3xl">
+      <div className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
         {/* Header */}
-        <div className="mb-8 text-center">
-          <h2 className="text-3xl font-bold text-stone-900">
-            You're All Set!
+        <div className="mb-6">
+          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
+            <ImageIcon className="h-5 w-5 text-purple-600" />
+          </div>
+          <h2 className="text-xl font-bold text-stone-900">
+            Setup Media Storage
           </h2>
-          <p className="mt-3 text-base text-stone-600">
-            NotWordPress has been successfully installed and configured. Your
-            database is ready and you can start creating content.
+          <p className="mt-1 text-sm text-stone-600">
+            Create a storage bucket in Supabase for managing your media files (images, videos, documents).
           </p>
         </div>
 
-        {/* Feature Highlights */}
-        <div className="mb-8 space-y-4">
-          <div className="flex items-start gap-4 rounded-lg border border-stone-200 bg-stone-50 p-4">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-white">
-              <Database className="h-5 w-5 text-stone-900" />
-            </div>
+        {/* Info Box */}
+        <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <div className="flex items-start gap-2">
+            <FolderOpen className="h-5 w-5 flex-shrink-0 text-blue-600 mt-0.5" />
             <div>
-              <h3 className="text-sm font-semibold text-stone-900">
-                Database Configured
-              </h3>
-              <p className="mt-1 text-sm text-stone-600">
-                All tables, functions, and triggers have been created successfully
-                in your Supabase database.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-4 rounded-lg border border-stone-200 bg-stone-50 p-4">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-white">
-              <Shield className="h-5 w-5 text-stone-900" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-stone-900">
-                Security Enabled
-              </h3>
-              <p className="mt-1 text-sm text-stone-600">
-                Row Level Security (RLS) policies are active, protecting your data
-                with database-level permissions.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-4 rounded-lg border border-stone-200 bg-stone-50 p-4">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-white">
-              <Zap className="h-5 w-5 text-stone-900" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-stone-900">
-                Ready to Use
-              </h3>
-              <p className="mt-1 text-sm text-stone-600">
-                Your credentials have been securely stored and the system is ready
-                for user registration and content creation.
+              <p className="text-sm font-medium text-blue-900">What is Media Storage?</p>
+              <p className="mt-1 text-sm text-blue-700">
+                The media storage bucket will store all your uploaded files including images, videos, documents, and other media assets.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Deployment Instructions */}
-        {credentials && (
-          <div className="mb-8 rounded-lg border border-amber-200 bg-amber-50 p-6">
-            <div className="mb-4 flex items-start gap-3">
-              <CloudUpload className="h-5 w-5 flex-shrink-0 text-amber-600" />
-              <div>
-                <h3 className="text-sm font-semibold text-amber-900">
-                  Important: Vercel Deployment Setup
-                </h3>
-                <p className="mt-1 text-sm text-amber-700">
-                  Your credentials have been saved to <code className="rounded bg-amber-100 px-1 py-0.5 font-mono text-xs">.env.local</code> for local development.
-                  To deploy to production on Vercel, you need to add these environment variables to your project settings.
-                </p>
-              </div>
+        {/* Step 1: Create Storage Bucket */}
+        <div className="mb-6">
+          <div className="mb-3 flex items-center gap-2">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-stone-900 text-xs font-bold text-white">
+              1
             </div>
+            <h3 className="text-base font-semibold text-stone-900">
+              Create Storage Bucket
+            </h3>
+          </div>
 
-            <div className="mt-4 space-y-3">
-              <div className="rounded-lg border border-amber-300 bg-white p-3">
-                <div className="mb-1 flex items-center justify-between">
-                  <label className="text-xs font-medium text-stone-700">NEXT_PUBLIC_SUPABASE_URL</label>
-                  <button
-                    onClick={() => copyToClipboard(credentials.supabaseUrl, 'url')}
-                    className="flex items-center gap-1 rounded px-2 py-1 text-xs text-amber-700 hover:bg-amber-100"
-                  >
-                    {copiedField === 'url' ? (
-                      <>
-                        <Check className="h-3 w-3" />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-3 w-3" />
-                        Copy
-                      </>
-                    )}
-                  </button>
-                </div>
-                <code className="block overflow-x-auto rounded bg-stone-50 p-2 text-xs font-mono text-stone-900">
-                  {credentials.supabaseUrl}
-                </code>
-              </div>
-
-              <div className="rounded-lg border border-amber-300 bg-white p-3">
-                <div className="mb-1 flex items-center justify-between">
-                  <label className="text-xs font-medium text-stone-700">NEXT_PUBLIC_SUPABASE_ANON_KEY</label>
-                  <button
-                    onClick={() => copyToClipboard(credentials.supabaseAnonKey, 'anon')}
-                    className="flex items-center gap-1 rounded px-2 py-1 text-xs text-amber-700 hover:bg-amber-100"
-                  >
-                    {copiedField === 'anon' ? (
-                      <>
-                        <Check className="h-3 w-3" />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-3 w-3" />
-                        Copy
-                      </>
-                    )}
-                  </button>
-                </div>
-                <code className="block overflow-x-auto rounded bg-stone-50 p-2 text-xs font-mono text-stone-900">
-                  {credentials.supabaseAnonKey}
-                </code>
-              </div>
-
-              <div className="rounded-lg border border-amber-300 bg-white p-3">
-                <div className="mb-1 flex items-center justify-between">
-                  <label className="text-xs font-medium text-stone-700">SUPABASE_SERVICE_ROLE_KEY</label>
-                  <button
-                    onClick={() => copyToClipboard(credentials.supabaseServiceRoleKey, 'service')}
-                    className="flex items-center gap-1 rounded px-2 py-1 text-xs text-amber-700 hover:bg-amber-100"
-                  >
-                    {copiedField === 'service' ? (
-                      <>
-                        <Check className="h-3 w-3" />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-3 w-3" />
-                        Copy
-                      </>
-                    )}
-                  </button>
-                </div>
-                <code className="block overflow-x-auto rounded bg-stone-50 p-2 text-xs font-mono text-stone-900">
-                  {credentials.supabaseServiceRoleKey}
-                </code>
-              </div>
-            </div>
-
-            <div className="mt-4 rounded-lg bg-amber-100 p-3">
-              <p className="text-xs font-medium text-amber-900">How to add to Vercel:</p>
-              <ol className="mt-2 space-y-1 text-xs text-amber-800">
-                <li>1. Go to your Vercel Dashboard</li>
-                <li>2. Select your project → Settings → Environment Variables</li>
-                <li>3. Add each variable above (name + value)</li>
-                <li>4. Select all environments (Production, Preview, Development)</li>
-                <li>5. Click "Save" and redeploy your application</li>
+          <div className="ml-8 space-y-3">
+            <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
+              <p className="mb-3 text-sm text-stone-700">
+                Follow these steps in your Supabase Dashboard:
+              </p>
+              <ol className="space-y-2 text-sm text-stone-700">
+                <li className="flex items-start gap-2">
+                  <span className="font-medium">1.</span>
+                  <span>Go to <strong>Storage</strong> section in your Supabase Dashboard</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-medium">2.</span>
+                  <span>Click <strong>New bucket</strong></span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-medium">3.</span>
+                  <span>Name the bucket: <code className="rounded bg-stone-200 px-1.5 py-0.5 font-mono text-xs">media</code></span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-medium">4.</span>
+                  <span>Enable <strong>Public bucket</strong> option</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-medium">5.</span>
+                  <span>Click <strong>Create bucket</strong></span>
+                </li>
               </ol>
             </div>
+
+            <div className="flex items-center gap-3 rounded-lg border border-purple-200 bg-purple-50 p-3">
+              <a
+                href={`${credentials.supabaseUrl.replace('.supabase.co', '.supabase.co/project/')}/storage/buckets`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 cursor-pointer"
+              >
+                Open Supabase Storage
+                <ExternalLink className="h-4 w-4" />
+              </a>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="bucket-created"
+                  checked={bucketCreated}
+                  onChange={(e) => setBucketCreated(e.target.checked)}
+                  className="h-4 w-4 rounded border-stone-300 text-purple-600 focus:ring-purple-600 cursor-pointer"
+                />
+                <label htmlFor="bucket-created" className="text-sm font-medium text-stone-700 cursor-pointer">
+                  I've created the bucket
+                </label>
+              </div>
+            </div>
           </div>
-        )}
-
-        {/* Next Steps */}
-        <div className="mb-8 rounded-lg border border-blue-200 bg-blue-50 p-6">
-          <h3 className="mb-3 text-sm font-semibold text-blue-900">
-            What's Next?
-          </h3>
-          <ul className="space-y-2 text-sm text-blue-800">
-            <li className="flex items-start gap-2">
-              <span className="mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-blue-200 text-xs font-bold text-blue-900">
-                1
-              </span>
-              <span>Restart your development server to load the new environment variables</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-blue-200 text-xs font-bold text-blue-900">
-                2
-              </span>
-              <span>Create your administrator account</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-blue-200 text-xs font-bold text-blue-900">
-                3
-              </span>
-              <span>Start creating posts and managing content</span>
-            </li>
-          </ul>
         </div>
 
-        {/* CTA Button */}
-        <div className="flex justify-center">
-          <button
-            onClick={handleGetStarted}
-            disabled={isVerifying}
-            className="inline-flex items-center gap-2 rounded-md bg-stone-900 px-6 py-3 text-base font-medium text-white hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-900 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isVerifying ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                Verifying Installation...
-              </>
-            ) : (
-              <>
-                Get Started
-                <ArrowRight className="h-5 w-5" />
-              </>
-            )}
-          </button>
-        </div>
-      </div>
+        {/* Step 2: Apply Storage Policies */}
+        <div className="mb-6">
+          <div className="mb-3 flex items-center gap-2">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-stone-900 text-xs font-bold text-white">
+              2
+            </div>
+            <h3 className="text-base font-semibold text-stone-900">
+              Apply Storage Policies
+            </h3>
+          </div>
 
-      {/* Additional Info */}
-      <div className="mt-6 text-center">
-        <p className="text-sm text-stone-500">
-          Need help?{' '}
-          <a
-            href="#"
-            className="font-medium text-stone-900 underline hover:text-stone-700"
-          >
-            View documentation
-          </a>{' '}
-          or{' '}
-          <a
-            href="#"
-            className="font-medium text-stone-900 underline hover:text-stone-700"
-          >
-            contact support
-          </a>
-        </p>
-      </div>
+          <div className="ml-8 space-y-3">
+            <p className="text-sm text-stone-700">
+              Copy and run the SQL below in your Supabase SQL Editor to set up storage policies:
+            </p>
 
-      {/* Restart Server Modal */}
-      {showRestartModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="mx-4 w-full max-w-3xl rounded-lg border border-stone-200 bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
-                  <CheckCircle2 className="h-6 w-6 text-green-600" />
-                </div>
-                <h3 className="text-xl font-bold text-stone-900">
-                  Installation Marked Complete!
-                </h3>
+            <div className="relative">
+              <div className="rounded-lg border border-stone-300 bg-stone-900 p-4">
+                <pre className="overflow-x-auto text-xs text-stone-100 font-mono">
+                  {storagePolicySQL}
+                </pre>
               </div>
               <button
-                onClick={() => setShowRestartModal(false)}
-                className="rounded-lg p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-600"
+                onClick={() => copyToClipboard(storagePolicySQL, 'sql')}
+                className="absolute right-3 top-3 flex items-center gap-1.5 rounded-md bg-stone-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-stone-600 cursor-pointer transition-colors"
               >
-                <X className="h-5 w-5" />
+                {copiedField === 'sql' ? (
+                  <>
+                    <Check className="h-3 w-3" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3 w-3" />
+                    Copy SQL
+                  </>
+                )}
               </button>
             </div>
 
-            <div className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4">
-              <p className="text-sm text-green-900">
-                Your installation has been successfully marked as complete in the database.
-                Now you need to restart your server to load the environment variables.
-              </p>
-            </div>
-
-            {/* Local Development Instructions */}
-            <div className="mb-6">
-              <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-stone-900">
-                <RefreshCw className="h-4 w-4" />
-                Local Development - Restart Server
-              </h4>
-              <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
-                <ol className="space-y-2 text-sm text-stone-700">
-                  <li className="flex items-start gap-2">
-                    <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-stone-900 text-xs font-bold text-white">
-                      1
-                    </span>
-                    <span>Stop your development server (Ctrl+C or Cmd+C in terminal)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-stone-900 text-xs font-bold text-white">
-                      2
-                    </span>
-                    <span>Run <code className="rounded bg-stone-200 px-2 py-0.5 font-mono text-xs">npm run dev</code> or <code className="rounded bg-stone-200 px-2 py-0.5 font-mono text-xs">yarn dev</code> again</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-stone-900 text-xs font-bold text-white">
-                      3
-                    </span>
-                    <span>Click the button below to continue to your website</span>
-                  </li>
-                </ol>
-              </div>
-            </div>
-
-            {/* Production Deployment Instructions */}
-            <div className="mb-6">
-              <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-stone-900">
-                <CloudUpload className="h-4 w-4" />
-                Production Deployment - Copy Environment Variables
-              </h4>
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-                <p className="mb-3 text-sm text-amber-900">
-                  If deploying to Vercel or other hosting, copy the <code className="rounded bg-amber-100 px-1 py-0.5 font-mono text-xs">.env.local</code> content below and add it to your hosting provider:
-                </p>
-                <div className="relative">
-                  <pre className="overflow-x-auto rounded-lg border border-amber-300 bg-white p-4 text-xs font-mono text-stone-900">
-                    {envFileContent}
-                  </pre>
-                  <button
-                    onClick={() => copyToClipboard(envFileContent, 'envFile')}
-                    className="absolute right-2 top-2 flex items-center gap-1 rounded bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700"
-                  >
-                    {copiedField === 'envFile' ? (
-                      <>
-                        <Check className="h-3 w-3" />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-3 w-3" />
-                        Copy All
-                      </>
-                    )}
-                  </button>
-                </div>
-                <div className="mt-3 rounded-lg bg-amber-100 p-3">
-                  <p className="text-xs font-medium text-amber-900">For Vercel:</p>
-                  <ol className="mt-2 space-y-1 text-xs text-amber-800">
-                    <li>1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables</li>
-                    <li>2. Add each variable (name + value) from above</li>
-                    <li>3. Select all environments (Production, Preview, Development)</li>
-                    <li>4. Save and redeploy your application</li>
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+              <div className="flex items-start gap-2">
+                <Code className="h-4 w-4 flex-shrink-0 text-amber-600 mt-0.5" />
+                <div className="text-sm text-amber-800">
+                  <p className="font-medium text-amber-900">How to run the SQL:</p>
+                  <ol className="mt-1 space-y-1">
+                    <li>1. Go to <strong>SQL Editor</strong> in Supabase Dashboard</li>
+                    <li>2. Paste the copied SQL</li>
+                    <li>3. Click <strong>Run</strong></li>
                   </ol>
                 </div>
               </div>
             </div>
 
-            {/* Continue Button */}
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowRestartModal(false)}
-                className="rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
+            <div className="flex items-center gap-3 rounded-lg border border-purple-200 bg-purple-50 p-3">
+              <a
+                href={`${credentials.supabaseUrl.replace('.supabase.co', '.supabase.co/project/')}/sql/new`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 cursor-pointer"
               >
-                Close
-              </button>
-              <button
-                onClick={handleContinueAfterRestart}
-                className="inline-flex items-center gap-2 rounded-md bg-stone-900 px-6 py-2 text-sm font-medium text-white hover:bg-stone-800"
-              >
-                I've Restarted - Continue
-                <ArrowRight className="h-4 w-4" />
-              </button>
+                Open SQL Editor
+                <ExternalLink className="h-4 w-4" />
+              </a>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="policies-applied"
+                  checked={policiesApplied}
+                  onChange={(e) => setPoliciesApplied(e.target.checked)}
+                  className="h-4 w-4 rounded border-stone-300 text-purple-600 focus:ring-purple-600 cursor-pointer"
+                />
+                <label htmlFor="policies-applied" className="text-sm font-medium text-stone-700 cursor-pointer">
+                  I've applied the policies
+                </label>
+              </div>
             </div>
           </div>
         </div>
-      )}
+
+        {/* Success Message */}
+        {bucketCreated && policiesApplied && (
+          <div className="mb-6 flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 p-4">
+            <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-green-600 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-green-900">Media Storage Setup Complete!</p>
+              <p className="mt-0.5 text-sm text-green-700">
+                Your media storage bucket has been created and configured. You can now proceed to the next step.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={handleBack}
+            className="inline-flex items-center gap-2 rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50 focus:outline-none focus:ring-2 focus:ring-stone-900 focus:ring-offset-2 cursor-pointer"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </button>
+          <button
+            onClick={handleContinue}
+            disabled={!bucketCreated || !policiesApplied}
+            className="inline-flex items-center gap-2 rounded-md bg-stone-900 px-3 py-2 text-sm font-medium text-white hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-900 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+          >
+            Continue
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

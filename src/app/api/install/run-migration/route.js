@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { createClient } from '@supabase/supabase-js';
 
 /**
  * Helper function to execute SQL using Supabase REST API
@@ -27,8 +28,22 @@ async function executeSQLViaSupabase(supabaseUrl, serviceRoleKey, sql) {
       };
     }
 
-    // The exec_sql function returns void, so response might be empty
-    // Just check if status is 2xx
+    // Parse the JSON response from exec_sql function
+    const result = await response.json();
+
+    // The exec_sql function now returns a JSON object with success and error fields
+    if (result && typeof result === 'object') {
+      if (result.success === false) {
+        return {
+          success: false,
+          error: result.error || 'SQL execution failed',
+          error_detail: result.error_detail
+        };
+      }
+      return { success: true };
+    }
+
+    // If response format is unexpected, assume success for backwards compatibility
     return { success: true };
   } catch (error) {
     console.error('Error executing SQL via Supabase:', error);
@@ -42,7 +57,7 @@ async function executeSQLViaSupabase(supabaseUrl, serviceRoleKey, sql) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { credentials, migrationId } = body;
+    const { credentials, migrationId, folder } = body;
 
     if (!credentials || !migrationId) {
       return NextResponse.json(
@@ -60,14 +75,17 @@ export async function POST(request) {
       );
     }
 
+    // Determine the migration folder (default to 'tables' for backwards compatibility)
+    const migrationFolder = folder || 'tables';
+    const migrationsDir = path.join(process.cwd(), 'database', 'migrations', migrationFolder);
+
     // Find the migration file
-    const migrationsDir = path.join(process.cwd(), 'database', 'migrations');
     const files = await fs.readdir(migrationsDir);
     const migrationFile = files.find((file) => file.startsWith(`${migrationId}_`));
 
     if (!migrationFile) {
       return NextResponse.json(
-        { success: false, error: `Migration file not found for ID: ${migrationId}` },
+        { success: false, error: `Migration file not found for ID: ${migrationId} in folder: ${migrationFolder}` },
         { status: 404 }
       );
     }

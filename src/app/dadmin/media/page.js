@@ -217,7 +217,8 @@ export default function MediaPage() {
         ? `${currentPath}/${newFolderName}`
         : newFolderName;
 
-      const placeholderFile = new File([''], '.placeholder', { type: 'text/plain' });
+      // Use image/png as the MIME type since the bucket only allows image/*, video/*, and application/pdf
+      const placeholderFile = new File([''], '.placeholder', { type: 'image/png' });
       await uploadFile(supabase, placeholderFile, folderPath);
 
       setNewFolderName('');

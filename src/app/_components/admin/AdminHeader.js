@@ -17,6 +17,7 @@ export default function AdminHeader() {
         const response = await fetch('/api/status');
         const data = await response.json();
         if (data.status === 'ok' && data.app_version) {
+          console.log('App Version:', data);
           setAppVersion(data.app_version);
         }
       } catch (error) {
@@ -45,8 +46,10 @@ export default function AdminHeader() {
       <div className="flex items-center gap-3">
         {/* App Version */}
         {appVersion && (
-          <div className="px-3 py-1 bg-stone-100 rounded-md">
-            <span className="text-xs font-medium text-stone-600">v{appVersion}</span>
+          <div className="px-3 py-1 rounded-md bg-stone-100">
+            <span className="text-xs font-medium text-stone-600">
+              v{appVersion}
+            </span>
           </div>
         )}
 
