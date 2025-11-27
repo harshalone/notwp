@@ -1,69 +1,233 @@
-# NotWordPress - Open Source CMS
+# NotWP - Open Source CMS
 
-This is a [Next.js](https://nextjs.org) based CMS project with Supabase backend.
+A modern, open-source Content Management System built with Next.js and Supabase. NotWP provides a powerful, flexible platform for creating and managing content with built-in authentication, media storage, and a beautiful admin interface.
 
-## Installation
+## Features
 
-Follow the installation wizard at `/install` after setting up your development environment.
+- 🚀 **Modern Stack**: Built with Next.js 15, React, and Supabase
+- 🔐 **Secure Authentication**: Row Level Security (RLS) policies at the database level
+- 📝 **Content Management**: Posts, pages, and documentation management
+- 🎨 **Visual Page Builder**: Integrated Puck editor for drag-and-drop page building
+- 📧 **Newsletter System**: Built-in email management with AWS SES integration
+- 🖼️ **Media Management**: Supabase storage for images and files
+- 🔌 **Plugin System**: Extensible architecture for custom functionality
+- 📱 **Responsive Admin Panel**: Clean, modern interface for content management
 
-### Database Setup
+## Quick Start
 
-The database migrations will automatically create:
-- All required tables (`nwp_accounts`, `nwp_posts`, `nwp_pages`, etc.)
-- Row Level Security (RLS) policies
-- Storage buckets for media
-- **A default administrator account**
+### Prerequisites
 
-### Default Administrator Credentials
+- Node.js 18+
+- A Supabase account and project
+- npm, yarn, pnpm, or bun package manager
 
-After running the database migrations in Step 3 of the installation, a default admin account is created:
+### Installation
 
-- **Email:** `admin@notwp.com`
-- **Password:** `admin`
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd notwp-opensource
+   ```
 
-**⚠️ IMPORTANT SECURITY NOTICE:**
-These are default credentials for initial setup only. You **must** change the password immediately after your first login.
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   yarn install
+   # or
+   pnpm install
+   ```
 
-### Changing Your Password
+3. **Start the development server**
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   # or
+   pnpm dev
+   ```
 
-1. Log in to the admin panel at `/dadmin/auth/login` using the default credentials
-2. Navigate to **Settings** in the admin panel
-3. Update your email address and password
-4. Configure your profile information (display name, bio, avatar, etc.)
+4. **Open your browser**
 
-Alternatively, you can use Supabase Auth dashboard to manage user accounts and reset passwords.
+   Navigate to [http://localhost:3000](http://localhost:3000)
 
-## Getting Started
+5. **Run the installation wizard**
 
-First, run the development server:
+   Go to [http://localhost:3000/install](http://localhost:3000/install) and follow the 6-step setup process.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Installation Wizard
+
+NotWP includes a comprehensive installation wizard that guides you through the setup process:
+
+### Step 1: Supabase Credentials
+- Enter your Supabase project URL
+- Add your anonymous (public) key
+- Add your service role (secret) key
+- Create the `exec_sql` helper function in your Supabase SQL Editor
+
+### Step 2: Review Setup
+- Preview all database migrations
+- See what tables, functions, and triggers will be created
+- Review security policies
+
+### Step 3: Install Database
+- Automatically runs all migrations
+- Creates 8 database tables
+- Sets up Row Level Security policies
+- Configures triggers and functions
+
+### Step 4: Storage Bucket
+- Create a 'media' storage bucket in Supabase
+- Apply storage policies for authenticated users
+- Set up permissions for file uploads
+
+### Step 5: Create Admin Account
+- Set up your administrator account
+- Configure email and password
+- Automatically sync with Supabase Auth
+
+### Step 6: Complete
+- Review environment variables
+- Get instructions for local development and production deployment
+- **Important**: Remove the `exec_sql` function for security
+- Restart your development server
+
+## Database Structure
+
+NotWP creates the following tables:
+
+- `nwp_accounts` - User profiles and account information
+- `nwp_posts` - Blog posts and articles
+- `nwp_pages` - Static pages with visual editor support
+- `nwp_app_settings` - Application configuration
+- `nwp_documentation` - Documentation content
+- `nwp_plugins` - Plugin management
+- `nwp_newsletter_subscribers` - Email subscribers
+- `nwp_newsletter_emails` - Email campaign history
+- `nwp_newsletter_settings` - AWS SES configuration
+
+## Environment Variables
+
+After installation, your `.env.local` file should contain:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### For Production Deployment
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+When deploying to Vercel or other hosting platforms:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Go to your project settings
+2. Add all three environment variables
+3. Select all environments (Production, Preview, Development)
+4. Save and redeploy
 
-## Learn More
+## Security Best Practices
 
-To learn more about Next.js, take a look at the following resources:
+### After Installation
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **Remove the exec_sql function** (Critical!)
+   ```sql
+   DROP FUNCTION IF EXISTS exec_sql(text);
+   ```
+   This function allows arbitrary SQL execution and must be removed from production.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+2. **Change your admin password immediately**
+   - Log in to `/dadmin/auth/login`
+   - Go to Settings
+   - Update your password
 
-## Deploy on Vercel
+3. **Review RLS policies**
+   - All tables have Row Level Security enabled
+   - Policies enforce user permissions at the database level
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+4. **Secure your service role key**
+   - Never expose it in client-side code
+   - Only use it in API routes and server-side functions
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Admin Panel
+
+Access the admin panel at `/dadmin` after logging in:
+
+- **Dashboard**: Overview of your content and statistics
+- **Posts**: Create and manage blog posts
+- **Pages**: Build pages with the visual editor
+- **Media**: Upload and manage images and files
+- **Documentation**: Create help articles and guides
+- **Newsletter**: Manage subscribers and send campaigns
+- **Plugins**: Install and configure plugins
+- **Settings**: Configure your site and profile
+
+## Development
+
+### Project Structure
+
+```
+src/
+├── app/                      # Next.js app directory
+│   ├── api/                 # API routes
+│   ├── blog/                # Blog pages
+│   ├── dadmin/              # Admin panel
+│   ├── install/             # Installation wizard
+│   └── _components/         # React components
+├── lib/                      # Utility functions
+│   └── sql/                 # SQL migration files
+database/
+└── migrations/              # Database migration files
+    ├── tables/              # Table creation scripts
+    ├── storage/             # Storage bucket setup
+    └── cleanup/             # Cleanup scripts
+```
+
+### Running Migrations Manually
+
+All migrations are in the `database/migrations/` directory:
+
+- `tables/` - Core table structures
+- `storage/` - Media storage configuration
+- `cleanup/` - Scripts to remove tables if needed
+
+### Custom Development
+
+- Edit pages in `src/app/`
+- Add components in `src/app/_components/`
+- Create API routes in `src/app/api/`
+- Customize styles using Tailwind CSS classes
+
+## Tech Stack
+
+- **Framework**: Next.js 15 (App Router)
+- **UI Library**: React 19
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth
+- **Storage**: Supabase Storage
+- **Styling**: Tailwind CSS
+- **Page Builder**: Puck Editor
+- **Icons**: Lucide React
+- **Email**: AWS SES (via newsletter system)
+
+## Resources
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Supabase Documentation](https://supabase.com/docs)
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+- [Puck Editor Documentation](https://puckeditor.com/docs)
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is open source and available under the MIT License.
+
+## Support
+
+For issues, questions, or feature requests, please open an issue on GitHub.
+
+---
+
+Built with ❤️ using Next.js and Supabase
