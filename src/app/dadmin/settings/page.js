@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import AdminSidebar from "@/app/_components/admin/AdminSidebar";
 import AdminHeader from "@/app/_components/admin/AdminHeader";
+import TopBar from "./components/TopBar";
 import { Settings as SettingsIcon, Save, Plus, Trash2, Edit2, X, Check } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -155,12 +156,17 @@ export default function SettingsPage() {
       <div className="flex-1 ml-64">
         <AdminHeader />
 
-        <main className="pt-20 px-8 pb-8">
+        {/* Settings Navigation Bar */}
+        <div className="pt-16">
+          <TopBar />
+        </div>
+
+        <main className="px-8 py-8">
           {/* Header */}
           <div className="mb-8 flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-stone-900">Settings</h1>
-              <p className="text-stone-600 mt-2">Configure your site settings and preferences</p>
+              <h2 className="text-2xl font-bold text-stone-900">General Settings</h2>
+              <p className="text-stone-600 mt-1">Manage all your site settings</p>
             </div>
             <button
               onClick={() => setShowAddModal(true)}

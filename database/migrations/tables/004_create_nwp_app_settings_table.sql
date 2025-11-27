@@ -74,7 +74,11 @@ INSERT INTO public.nwp_app_settings (setting_key, setting_value, setting_type, d
     ('installation_complete', 'false', 'boolean', 'Whether the initial installation is complete', TRUE),
     ('supabase_url', NULL, 'encrypted', 'Supabase project URL', FALSE),
     ('supabase_anon_key', NULL, 'encrypted', 'Supabase anonymous key', FALSE),
-    ('supabase_service_role_key', NULL, 'encrypted', 'Supabase service role key', FALSE)
+    ('supabase_service_role_key', NULL, 'encrypted', 'Supabase service role key', FALSE),
+    ('logo_url', NULL, 'string', 'Application logo URL', TRUE),
+    ('brand_name', 'NotWordPress', 'string', 'Brand name', TRUE),
+    ('website_name', 'NotWordPress', 'string', 'Website name', TRUE),
+    ('contact_email', NULL, 'string', 'Contact email address', TRUE)
 ON CONFLICT (setting_key) DO NOTHING;
 
 -- Grant permissions
