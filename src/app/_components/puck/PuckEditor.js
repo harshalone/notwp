@@ -8,6 +8,7 @@ import { puckComponents } from './puck-components';
 import { createAiPlugin } from "@puckeditor/plugin-ai";
 import "@puckeditor/plugin-ai/styles.css";
 import { ImagePickerModal } from './ImagePickerModal';
+import { Flex, Grid, Space } from './blocks';
 
 // Define your component blocks - now using imported components plus some basic blocks
 const config = {
@@ -91,8 +92,8 @@ const config = {
         },
       },
       defaultProps: {
-        src: "https://via.placeholder.com/800x400",
-        alt: "Placeholder image",
+        src: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/notwp.png",
+        alt: "NotWP",
         width: "full",
       },
       render: ({ src, alt, width }) => {
@@ -270,11 +271,18 @@ const config = {
         );
       },
     },
-
+    // Layout Components - imported from blocks
+    Flex,
+    Grid,
+    Space,
     // Import all the comprehensive components
     ...puckComponents,
   },
   categories: {
+    layout: {
+      components: ['Flex', 'Grid', 'Space'],
+      title: 'Layout',
+    },
     navigation: {
       components: ['Site Header', 'Site Footer', 'Custom Header', 'Custom Footer'],
     },

@@ -1,0 +1,13 @@
+.Flex {
+  display: flex;
+  flex-wrap: wrap;
+  height: 100%;
+}
+
+.Flex > * {
+  flex-shrink: 0;
+}
+
+.Flex-item {
+  flex: 1;
+}

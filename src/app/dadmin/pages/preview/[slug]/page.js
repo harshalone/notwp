@@ -269,6 +269,152 @@ const config = {
         );
       },
     },
+    ContainerBlock: {
+      fields: {
+        maxWidth: {
+          type: "select",
+          options: [
+            { label: "Small (640px)", value: "max-w-sm" },
+            { label: "Medium (768px)", value: "max-w-md" },
+            { label: "Large (1024px)", value: "max-w-lg" },
+            { label: "Extra Large (1280px)", value: "max-w-xl" },
+            { label: "2XL (1536px)", value: "max-w-2xl" },
+            { label: "Full Width", value: "max-w-full" },
+          ],
+          label: "Max Width"
+        },
+        padding: {
+          type: "select",
+          options: [
+            { label: "None", value: "p-0" },
+            { label: "Small", value: "p-4" },
+            { label: "Medium", value: "p-6" },
+            { label: "Large", value: "p-8" },
+            { label: "Extra Large", value: "p-12" },
+          ],
+          label: "Padding"
+        },
+        backgroundColor: {
+          type: "select",
+          options: [
+            { label: "Transparent", value: "bg-transparent" },
+            { label: "White", value: "bg-white" },
+            { label: "Gray 50", value: "bg-gray-50" },
+            { label: "Gray 100", value: "bg-gray-100" },
+            { label: "Blue 50", value: "bg-blue-50" },
+            { label: "Blue 100", value: "bg-blue-100" },
+          ],
+          label: "Background Color"
+        },
+        centered: {
+          type: "select",
+          options: [
+            { label: "Yes", value: true },
+            { label: "No", value: false },
+          ],
+          label: "Center Container"
+        },
+      },
+      defaultProps: {
+        maxWidth: "max-w-xl",
+        padding: "p-6",
+        backgroundColor: "bg-transparent",
+        centered: true,
+      },
+      render: ({ maxWidth, padding, backgroundColor, centered, puck: { renderDropZone } }) => {
+        return (
+          <div className={`${maxWidth} ${padding} ${backgroundColor} ${centered ? 'mx-auto' : ''} mb-6`}>
+            {renderDropZone("container-content")}
+          </div>
+        );
+      },
+    },
+    FlexboxBlock: {
+      fields: {
+        direction: {
+          type: "select",
+          options: [
+            { label: "Row", value: "flex-row" },
+            { label: "Column", value: "flex-col" },
+            { label: "Row Reverse", value: "flex-row-reverse" },
+            { label: "Column Reverse", value: "flex-col-reverse" },
+          ],
+          label: "Flex Direction"
+        },
+        justifyContent: {
+          type: "select",
+          options: [
+            { label: "Start", value: "justify-start" },
+            { label: "Center", value: "justify-center" },
+            { label: "End", value: "justify-end" },
+            { label: "Space Between", value: "justify-between" },
+            { label: "Space Around", value: "justify-around" },
+            { label: "Space Evenly", value: "justify-evenly" },
+          ],
+          label: "Justify Content"
+        },
+        alignItems: {
+          type: "select",
+          options: [
+            { label: "Start", value: "items-start" },
+            { label: "Center", value: "items-center" },
+            { label: "End", value: "items-end" },
+            { label: "Stretch", value: "items-stretch" },
+            { label: "Baseline", value: "items-baseline" },
+          ],
+          label: "Align Items"
+        },
+        gap: {
+          type: "select",
+          options: [
+            { label: "None", value: "gap-0" },
+            { label: "Small (1rem)", value: "gap-4" },
+            { label: "Medium (1.5rem)", value: "gap-6" },
+            { label: "Large (2rem)", value: "gap-8" },
+            { label: "Extra Large (3rem)", value: "gap-12" },
+          ],
+          label: "Gap"
+        },
+        wrap: {
+          type: "select",
+          options: [
+            { label: "No Wrap", value: "flex-nowrap" },
+            { label: "Wrap", value: "flex-wrap" },
+            { label: "Wrap Reverse", value: "flex-wrap-reverse" },
+          ],
+          label: "Flex Wrap"
+        },
+        columns: {
+          type: "select",
+          options: [
+            { label: "1 Column", value: 1 },
+            { label: "2 Columns", value: 2 },
+            { label: "3 Columns", value: 3 },
+            { label: "4 Columns", value: 4 },
+          ],
+          label: "Number of Columns"
+        },
+      },
+      defaultProps: {
+        direction: "flex-row",
+        justifyContent: "justify-start",
+        alignItems: "items-stretch",
+        gap: "gap-4",
+        wrap: "flex-wrap",
+        columns: 2,
+      },
+      render: ({ direction, justifyContent, alignItems, gap, wrap, columns, puck: { renderDropZone } }) => {
+        return (
+          <div className={`flex ${direction} ${justifyContent} ${alignItems} ${gap} ${wrap} mb-6`}>
+            {Array.from({ length: columns }).map((_, idx) => (
+              <div key={idx} className="flex-1 min-w-[200px]">
+                {renderDropZone(`flexbox-col-${idx}`)}
+              </div>
+            ))}
+          </div>
+        );
+      },
+    },
 
     // Import all the comprehensive components
     ...puckComponents,

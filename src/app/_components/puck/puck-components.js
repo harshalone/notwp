@@ -220,7 +220,7 @@ export const puckComponents = {
       secondaryButtonLink: "/about",
       backgroundImage: "",
       imagePosition: "right",
-      image: "https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&q=80",
+      image: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/notwp.png",
     },
     render: ({
       title,
@@ -309,7 +309,7 @@ export const puckComponents = {
         defaultItemProps: {
           title: "Feature",
           description: "Description of this feature",
-          image: "https://via.placeholder.com/400",
+          image: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/notwp.png",
           size: "medium",
         },
       },
@@ -318,9 +318,9 @@ export const puckComponents = {
       title: "Everything You Need",
       subtitle: "Powerful features to help you succeed",
       items: [
-        { title: "Fast Performance", description: "Lightning-fast load times", image: "https://via.placeholder.com/400", size: "large" },
-        { title: "Secure", description: "Enterprise-grade security", image: "https://via.placeholder.com/400", size: "small" },
-        { title: "Scalable", description: "Grows with your business", image: "https://via.placeholder.com/400", size: "medium" },
+        { title: "Fast Performance", description: "Lightning-fast load times", image: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/notwp.png", size: "large" },
+        { title: "Secure", description: "Enterprise-grade security", image: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/notwp.png", size: "small" },
+        { title: "Scalable", description: "Grows with your business", image: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/notwp.png", size: "medium" },
       ],
     },
     render: ({ title, subtitle, items }) => {
@@ -374,9 +374,9 @@ export const puckComponents = {
     defaultProps: {
       title: "Article Title",
       excerpt: "This is a brief excerpt of the article content that provides a preview of what readers can expect.",
-      image: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&q=80",
+      image: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/notwp.png",
       author: "John Doe",
-      authorImage: "https://via.placeholder.com/100",
+      authorImage: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/notwp.png",
       date: "Jan 1, 2024",
       category: "Technology",
       link: "/article",
@@ -481,7 +481,7 @@ export const puckComponents = {
         },
         label: "Cards",
         defaultItemProps: {
-          image: "https://via.placeholder.com/400",
+          image: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/notwp.png",
           title: "Card Title",
           description: "Card description",
           link: "#",
@@ -493,9 +493,9 @@ export const puckComponents = {
       subtitle: "Check out our recent work",
       columns: "3",
       cards: [
-        { image: "https://via.placeholder.com/400", title: "Project 1", description: "Description of project 1", link: "#" },
-        { image: "https://via.placeholder.com/400", title: "Project 2", description: "Description of project 2", link: "#" },
-        { image: "https://via.placeholder.com/400", title: "Project 3", description: "Description of project 3", link: "#" },
+        { image: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/notwp.png", title: "Project 1", description: "Description of project 1", link: "#" },
+        { image: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/notwp.png", title: "Project 2", description: "Description of project 2", link: "#" },
+        { image: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/notwp.png", title: "Project 3", description: "Description of project 3", link: "#" },
       ],
     },
     render: ({ title, subtitle, columns, cards }) => {
@@ -558,7 +558,7 @@ export const puckComponents = {
     },
     defaultProps: {
       imagePosition: "right",
-      image: "https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&q=80",
+      image: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/notwp.png",
       title: "Build Better Products",
       description: "Our platform provides all the tools you need to create amazing products that your customers will love.",
       buttonText: "Learn More",
@@ -624,7 +624,7 @@ export const puckComponents = {
         defaultItemProps: {
           title: "Article Title",
           excerpt: "Article excerpt",
-          image: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&q=80",
+          image: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/notwp.png",
           category: "News",
           date: "Jan 1, 2024",
           link: "#",
@@ -638,7 +638,7 @@ export const puckComponents = {
         {
           title: "Getting Started with Web Development",
           excerpt: "Learn the basics of web development and start building amazing websites",
-          image: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&q=80",
+          image: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/notwp.png",
           category: "Tutorial",
           date: "Jan 15, 2024",
           link: "#",
@@ -819,7 +819,7 @@ export const puckComponents = {
           author: "John Doe",
           role: "CEO",
           company: "Company Inc",
-          avatar: "https://via.placeholder.com/100",
+          avatar: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/notwp.png",
           rating: "5",
         },
       },
@@ -833,7 +833,7 @@ export const puckComponents = {
           author: "Jane Smith",
           role: "Product Manager",
           company: "Tech Corp",
-          avatar: "https://via.placeholder.com/100",
+          avatar: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/notwp.png",
           rating: "5",
         },
       ],
@@ -936,7 +936,7 @@ export const puckComponents = {
         },
         label: "Customer Logos",
         defaultItemProps: {
-          src: "https://via.placeholder.com/200x80",
+          src: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/notwp.png",
           alt: "Company",
         },
       },
@@ -945,10 +945,10 @@ export const puckComponents = {
       title: "Trusted by Leading Companies",
       subtitle: "Join thousands of companies using our platform",
       logos: [
-        { src: "https://via.placeholder.com/200x80", alt: "Company 1" },
-        { src: "https://via.placeholder.com/200x80", alt: "Company 2" },
-        { src: "https://via.placeholder.com/200x80", alt: "Company 3" },
-        { src: "https://via.placeholder.com/200x80", alt: "Company 4" },
+        { src: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/notwp.png", alt: "Company 1" },
+        { src: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/notwp.png", alt: "Company 2" },
+        { src: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/notwp.png", alt: "Company 3" },
+        { src: "https://vsifesaczqscrutqgojh.supabase.co/storage/v1/object/public/media/website/notwp.png", alt: "Company 4" },
       ],
     },
     render: ({ title, subtitle, logos }) => {
